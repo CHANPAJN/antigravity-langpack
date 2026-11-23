@@ -767,7 +767,8 @@
 
       if (document.body) {
         outsideMenuListener = (ev) => {
-          const targetEl = ev.target && ev.target.nodeType === 1 ? ev.target : null;
+          const rawTarget = ev.target;
+          const targetEl = rawTarget && rawTarget.nodeType === 1 ? rawTarget : rawTarget?.parentElement || null;
           const pop = document.getElementById('agi18n-language-popover');
           const trig = document.getElementById('agi18n-language-trigger');
           if (pop && (!targetEl || !pop.contains(targetEl)) && (!trig || !targetEl || !trig.contains(targetEl))) {

@@ -295,14 +295,28 @@ export async function runDaemonLoop({ once = false } = {}) {
     });
   }
 
+  let switching = false;
+  let queuedLocale = '';
+
   const broadcastImmediateLocaleSwitch = async (nextLocale) => {
-    writeConfigFile({ locale: nextLocale });
-    builder.refreshIfNeeded();
-    const tasks = [];
-    for (const s of sessions.values()) {
-      tasks.push(s.applyBundle());
+    queuedLocale = nextLocale;
+    if (switching) return;
+    switching = true;
+    try {
+      while (queuedLocale) {
+        const targetLoc = queuedLocale;
+        queuedLocale = '';
+        writeConfigFile({ locale: targetLoc });
+        builder.refreshIfNeeded();
+        const tasks = [];
+        for (const s of sessions.values()) {
+          tasks.push(s.applyBundle());
+        }
+        await Promise.allSettled(tasks);
+      }
+    } finally {
+      switching = false;
     }
-    await Promise.allSettled(tasks);
   };
 
   async function tick() {
