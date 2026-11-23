@@ -415,6 +415,7 @@ test('Security & transparency gates: GPL-3.0 license, default-off telemetry/AI s
   const licenseText = fs.readFileSync(path.join(PROJECT_ROOT, 'LICENSE'), 'utf8');
   assert.ok(licenseText.includes('GNU GENERAL PUBLIC LICENSE'));
   assert.ok(licenseText.includes('Version 3, 29 June 2007'));
+  assert.ok(licenseText.split(/\r?\n/).length >= 600, 'LICENSE must preserve multi-line formatting for GitHub Licensee detection');
 
   const relaunchSrc = fs.readFileSync(path.join(PROJECT_ROOT, 'src', 'relaunch.mjs'), 'utf8');
   assert.equal(/-Force\b|SIGKILL\b|taskkill\s+\/F/i.test(relaunchSrc), false, 'relaunch.mjs must never force-kill user processes');
