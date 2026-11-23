@@ -49,6 +49,9 @@ node cli.mjs install --lang ja
 # macOS オプション：起動時からデバッグポートを付与する純シェルスクリプト製 Dock ランチャーを作成
 node cli.mjs install --lang ja --mac-launcher
 
+# オプション：アップデート時の新規英語ラベル自動差分翻訳を有効化（後から `node cli.mjs auto-sync on/off` でも切替可能）
+node cli.mjs install --lang ja --auto-sync
+
 # オプション：チャット内同期スキル（~/.gemini/config/skills/）を明示的に追加する場合
 node cli.mjs install --lang ja --with-skill
 ```

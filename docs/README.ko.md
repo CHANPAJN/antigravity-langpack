@@ -47,6 +47,9 @@ node cli.mjs install --lang ko
 # macOS 선택 사항: 디버그 포트를 포함해 바로 실행하는 순수 셸 Dock 런처 생성
 node cli.mjs install --lang ko --mac-launcher
 
+# 선택 사항: 업데이트 시 신규 영어 라벨 백그라운드 자동 번역 활성화 (`node cli.mjs auto-sync on/off`로 언제든 전환 가능)
+node cli.mjs install --lang ko --auto-sync
+
 # 선택 사항: 대화형 동기화 스킬(~/.gemini/config/skills/) 명시적 설치
 node cli.mjs install --lang ko --with-skill
 ```

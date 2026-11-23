@@ -45,6 +45,9 @@ node cli.mjs install --lang zh-TW
 # 選用：macOS 產生純 Shell 指令碼 Dock 免重啟啟動器
 node cli.mjs install --lang zh-TW --mac-launcher
 
+# 選用：開啟新版本未翻譯按鈕背景自動補詞（或隨時執行 `node cli.mjs auto-sync on/off` 切換）
+node cli.mjs install --lang zh-TW --auto-sync
+
 # 選用：顯式安裝對話觸發技能至 ~/.gemini/config/skills/
 node cli.mjs install --lang zh-TW --with-skill
 ```

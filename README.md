@@ -79,6 +79,9 @@ node cli.mjs install --lang ja
 # macOS: create a 3-line pure-shell Dock launcher that passes --remote-debugging-port=0 directly on launch
 node cli.mjs install --lang ja --mac-launcher
 
+# Optional: enable automatic background AI translation for new UI phrases in future updates (12h cooldown, read-only sandbox)
+node cli.mjs install --auto-sync
+
 # Optional: install SKILL.md into ~/.gemini/config/skills/antigravity-langpack-sync for in-chat sync triggers
 node cli.mjs install --with-skill
 ```
@@ -88,13 +91,14 @@ node cli.mjs install --with-skill
 - **In-App Dropdown**: Open **`Settings → Appearance → Display Language`** and pick any option for an immediate live switch.
 - **CLI**:
   ```bash
-  node cli.mjs status        # Check daemon status, config & active ports
-  node cli.mjs lang          # List all 14 locale packs & entry counts
-  node cli.mjs lang ja       # Switch to Japanese immediately
-  node cli.mjs lang en       # Switch back to original English
-  node cli.mjs sync-ai       # On-demand read-only AI translation for newly added UI labels
-  node cli.mjs check         # Verify zero binaries & validate all scripts/JSON
-  node cli.mjs uninstall     # Cleanly restore English UI & remove autostart
+  node cli.mjs status          # Check daemon status, config & active ports
+  node cli.mjs lang            # List all 14 locale packs & entry counts
+  node cli.mjs lang ja         # Switch to Japanese immediately
+  node cli.mjs lang en         # Switch back to original English
+  node cli.mjs sync-ai         # Manually run one-shot read-only AI sync for newly added UI labels
+  node cli.mjs auto-sync on    # Enable automatic background AI dictionary sync (or `off` to disable)
+  node cli.mjs check           # Verify zero binaries & validate all scripts/JSON
+  node cli.mjs uninstall       # Cleanly restore English UI & remove autostart
   ```
 
 ---

@@ -454,7 +454,13 @@ async function main() {
   }
 
   if (cmd === 'install') {
-    if (langOpt) writeConfigFile({ locale: langOpt });
+    const installPatch = {};
+    if (langOpt) installPatch.locale = langOpt;
+    if (args.includes('--auto-sync')) {
+      installPatch.collectUntranslated = true;
+      installPatch.autoSyncAi = true;
+    }
+    if (Object.keys(installPatch).length > 0) writeConfigFile(installPatch);
     const channels = resolveActiveChannels('auto');
     let updatedShortcuts = 0;
     let macLaunchers = [];
@@ -559,6 +565,45 @@ async function main() {
     return;
   }
 
+  if (cmd === 'auto-sync') {
+    const mode = (args.find((a) => !a.startsWith('--')) || '').toLowerCase();
+    if (mode === 'on' || mode === 'enable' || mode === 'true') {
+      const updated = writeConfigFile({ collectUntranslated: true, autoSyncAi: true });
+      console.log(
+        JSON.stringify(
+          { ok: true, autoSyncAi: updated.autoSyncAi, collectUntranslated: updated.collectUntranslated },
+          null,
+          2
+        )
+      );
+      return;
+    }
+    if (mode === 'off' || mode === 'disable' || mode === 'false') {
+      const updated = writeConfigFile({ collectUntranslated: false, autoSyncAi: false });
+      console.log(
+        JSON.stringify(
+          { ok: true, autoSyncAi: updated.autoSyncAi, collectUntranslated: updated.collectUntranslated },
+          null,
+          2
+        )
+      );
+      return;
+    }
+    const cur = readJsonFile(FILES.config, {});
+    console.log(
+      JSON.stringify(
+        {
+          autoSyncAi: cur.autoSyncAi === true,
+          collectUntranslated: cur.collectUntranslated === true,
+          usage: 'node cli.mjs auto-sync <on|off>'
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+
   if (cmd === 'sync-ai') {
     const res = await runKeyFreeAiSync({ localeCode: langOpt });
     console.log(JSON.stringify(res, null, 2));
@@ -580,7 +625,7 @@ async function main() {
   }
 
   console.error(
-    `Unknown command: ${cmd}. Available: status | lang | check | install | uninstall | collect | apply-dict | sync-ai | bootstrap-lang`
+    `Unknown command: ${cmd}. Available: status | lang | check | install | uninstall | auto-sync | collect | apply-dict | sync-ai | bootstrap-lang`
   );
   process.exitCode = 1;
 }

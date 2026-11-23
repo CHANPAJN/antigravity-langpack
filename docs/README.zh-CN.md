@@ -50,8 +50,17 @@ node cli.mjs install --lang zh-en
 # 可选参数：macOS 生成 3 行纯 Shell 脚本的 Dock 免重开启动器
 node cli.mjs install --mac-launcher
 
+# 可选参数：开启新版本未翻译按钮后台自动补词（12 小时冷却锁 + 只读沙箱）
+node cli.mjs install --auto-sync
+
 # 可选参数：显式安装对话触发技能至 ~/.gemini/config/skills/
 node cli.mjs install --with-skill
+```
+
+日常也可随时用一行命令手动补词或开关后台自动补词（实时热生效，无需重启）：
+```bash
+node cli.mjs sync-ai         # 手动触发一次增量新词翻译
+node cli.mjs auto-sync on    # 开启后台自动检测并翻译新词（传 off 关闭）
 ```
 
 Windows 用户也可直接双击仓库根目录的纯明文 `install.cmd` 完成安装；卸载与还原英文只需运行 `node cli.mjs uninstall`。
