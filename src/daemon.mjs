@@ -18,7 +18,7 @@ import { createRelaunchMonitor } from './relaunch.mjs';
 import { PID_LOCK_FILE, readDaemonPid } from './service.mjs';
 
 const SYNC_INTERVAL_MS = 2500;
-const DISCOVERY_INTERVAL_MS = 12500;
+const DISCOVERY_INTERVAL_MS = 2500;
 const AUTO_AI_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 const AUTO_AI_STATE_FILE = path.join(os.tmpdir(), 'antigravity-langpack-autosync.json');
 const BINDING_NAME = '__agi18n_switch_locale';
@@ -194,7 +194,7 @@ function createPersistentSession(target, channelInfo, getScriptState, onLocaleRe
         await callCdp('Runtime.enable');
         if (!isWorkbench) {
           const check = await callCdp('Runtime.evaluate', {
-            expression: `Boolean(window.location?.protocol === 'vscode-file:' || window.electronNative || document.querySelector('[id="antigravity.agentSidePanelInputBox"], body[data-agy-theme], body[data-newux-theme]'))`,
+            expression: `Boolean(window.location?.protocol === 'vscode-file:' || /^https?:\\/\\/127\\.0\\.0\\.1:\\d+\\//.test(window.location?.href || '') || window.electronNative || document.querySelector('[id="antigravity.agentSidePanelInputBox"], body[data-agy-theme], body[data-newux-theme]'))`,
             returnByValue: true
           });
           isWorkbench = check?.result?.result?.value === true;

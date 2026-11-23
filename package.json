@@ -1,6 +1,6 @@
 {
   "name": "antigravity-langpack",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Zero-binary, zero-dependency 14-language (zh-CN, zh-TW, zh-SG, ja, ko, vi, hi, id, th, es, fr, de, pt, it) native UI localizer & key-free AI dictionary updater for Google Antigravity on Windows, macOS & Linux.",
   "type": "module",
   "license": "PolyForm-Noncommercial-1.0.0",

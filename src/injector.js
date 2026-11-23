@@ -340,6 +340,8 @@
     let observer = null;
     let rafId = 0;
     let timerId = 0;
+    let clickRafId = 0;
+    let clickTimerId = 0;
     let outsideMenuListener = null;
     const dirtyNodes = new Set();
 
@@ -702,10 +704,6 @@
 
     function flushDirtyQueue() {
       rafId = 0;
-      if (timerId) {
-        clearTimeout(timerId);
-        timerId = 0;
-      }
       ensureAppearanceLanguageRow();
       if (!enabled || dirtyNodes.size === 0) {
         dirtyNodes.clear();
@@ -724,13 +722,38 @@
     }
 
     function scheduleFlush() {
-      if (rafId || timerId) return;
       if (document.hidden) {
-        timerId = setTimeout(flushDirtyQueue, 300);
-      } else {
-        rafId = requestAnimationFrame(flushDirtyQueue);
-        timerId = setTimeout(flushDirtyQueue, 90);
+        if (!timerId) {
+          timerId = setTimeout(() => {
+            timerId = 0;
+            flushDirtyQueue();
+          }, 300);
+        }
+        return;
       }
+      if (!rafId) {
+        rafId = requestAnimationFrame(flushDirtyQueue);
+      }
+      if (!timerId) {
+        timerId = setTimeout(() => {
+          timerId = 0;
+          flushDirtyQueue();
+        }, 90);
+      }
+    }
+
+    function schedulePostClickAppearanceCheck() {
+      if (!clickRafId) {
+        clickRafId = requestAnimationFrame(() => {
+          clickRafId = 0;
+          ensureAppearanceLanguageRow();
+        });
+      }
+      if (clickTimerId) clearTimeout(clickTimerId);
+      clickTimerId = setTimeout(() => {
+        clickTimerId = 0;
+        ensureAppearanceLanguageRow();
+      }, 90);
     }
 
     function mount() {
@@ -744,10 +767,14 @@
 
       if (document.body) {
         outsideMenuListener = (ev) => {
+          const targetEl = ev.target && ev.target.nodeType === 1 ? ev.target : null;
           const pop = document.getElementById('agi18n-language-popover');
           const trig = document.getElementById('agi18n-language-trigger');
-          if (pop && !pop.contains(ev.target) && (!trig || !trig.contains(ev.target))) {
+          if (pop && (!targetEl || !pop.contains(targetEl)) && (!trig || !targetEl || !trig.contains(targetEl))) {
             closeLanguagePopover();
+          }
+          if (targetEl && (!pop || !pop.contains(targetEl)) && targetEl.closest('button, [role="tab"], [role="button"]')) {
+            schedulePostClickAppearanceCheck();
           }
         };
         document.addEventListener('click', outsideMenuListener, true);
@@ -768,13 +795,19 @@
           }
           if (dirtyNodes.size > 0 || sawElementAdd) scheduleFlush();
         });
-        observer.observe(document.body, {
-          childList: true,
-          subtree: true,
-          characterData: enabled,
-          attributes: enabled,
-          attributeFilter: ['title', 'placeholder', 'aria-label']
-        });
+        const observeOpts = enabled
+          ? {
+              childList: true,
+              subtree: true,
+              characterData: true,
+              attributes: true,
+              attributeFilter: ['title', 'placeholder', 'aria-label']
+            }
+          : {
+              childList: true,
+              subtree: true
+            };
+        observer.observe(document.body, observeOpts);
       }
     }
 
@@ -794,6 +827,14 @@
       if (timerId) {
         clearTimeout(timerId);
         timerId = 0;
+      }
+      if (clickRafId) {
+        cancelAnimationFrame(clickRafId);
+        clickRafId = 0;
+      }
+      if (clickTimerId) {
+        clearTimeout(clickTimerId);
+        clickTimerId = 0;
       }
       dirtyNodes.clear();
       closeLanguagePopover();

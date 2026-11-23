@@ -9,6 +9,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { LOCALE_MENU_OPTIONS, SUPPORTED_LOCALES } from '../src/locales.mjs';
 import {
+  FILES,
   PROJECT_ROOT,
   createPayloadBuilder,
   loadMergedDictionary,
@@ -199,6 +200,8 @@ test('Per-locale learned dictionary writes strictly to dict/learned.<locale>.jso
   assert.equal(LOCALE_MENU_OPTIONS.length, 15);
   const jaLearned = resolveLocaleFiles('ja').learnedDict;
   const backupJa = fs.existsSync(jaLearned) ? fs.readFileSync(jaLearned, 'utf8') : '';
+  const hadConfig = fs.existsSync(FILES.config);
+  const backupConfig = hadConfig ? fs.readFileSync(FILES.config, 'utf8') : '';
   try {
     writeConfigFile({ locale: 'ja' });
     const builder = createPayloadBuilder();
@@ -217,8 +220,186 @@ test('Per-locale learned dictionary writes strictly to dict/learned.<locale>.jso
     assert.equal(enState.config.enabled, false);
     assert.equal(enState.dictCount, 0);
   } finally {
-    writeConfigFile({ locale: 'zh-CN', enabled: true });
+    if (hadConfig) fs.writeFileSync(FILES.config, backupConfig, 'utf8');
+    else if (fs.existsSync(FILES.config)) fs.unlinkSync(FILES.config);
     if (backupJa) fs.writeFileSync(jaLearned, backupJa, 'utf8');
     else if (fs.existsSync(jaLearned)) fs.unlinkSync(jaLearned);
   }
+});
+
+test('English mode (enabled: false) mounts MutationObserver without WHATWG attributeFilter TypeError and renders Appearance dropdown dynamically', async () => {
+  const vm = await import('node:vm');
+  const injectorSrc = fs.readFileSync(path.join(PROJECT_ROOT, 'src', 'injector.js'), 'utf8');
+
+  let observerCallback = null;
+  let observedOptions = null;
+
+  class StrictMutationObserver {
+    constructor(cb) {
+      this.cb = cb;
+    }
+    observe(target, options = {}) {
+      // WHATWG DOM Standard check enforced by Chromium V8:
+      if ('attributeFilter' in options && options.attributes === false) {
+        throw new TypeError(
+          "Failed to execute 'observe' on 'MutationObserver': The options object may only set 'attributeFilter' when 'attributes' is true or not present."
+        );
+      }
+      observedOptions = options;
+      observerCallback = this.cb;
+    }
+    disconnect() {
+      observerCallback = null;
+    }
+  }
+
+  const elementsById = new Map();
+  let agyCards = [];
+
+  function makeFakeElement(tag) {
+    const el = {
+      nodeType: 1,
+      tagName: String(tag).toUpperCase(),
+      id: '',
+      className: '',
+      textContent: '',
+      style: {},
+      attributes: new Map(),
+      children: [],
+      parentElement: null,
+      firstChild: null,
+      isConnected: true,
+      setAttribute(k, v) {
+        this.attributes.set(k, String(v));
+        if (k === 'id') elementsById.set(String(v), this);
+      },
+      getAttribute(k) {
+        return this.attributes.has(k) ? this.attributes.get(k) : null;
+      },
+      removeAttribute(k) {
+        this.attributes.delete(k);
+      },
+      appendChild(child) {
+        child.parentElement = this;
+        this.children.push(child);
+        this.firstChild = this.children[0] || null;
+        if (child.id) elementsById.set(child.id, child);
+        return child;
+      },
+      insertBefore(child, ref) {
+        child.parentElement = this;
+        const idx = ref ? this.children.indexOf(ref) : -1;
+        if (idx >= 0) this.children.splice(idx, 0, child);
+        else this.children.unshift(child);
+        this.firstChild = this.children[0] || null;
+        if (child.id) elementsById.set(child.id, child);
+        return child;
+      },
+      remove() {
+        if (this.id) elementsById.delete(this.id);
+      },
+      addEventListener() {},
+      removeEventListener() {},
+      closest(sel) {
+        if (sel === '.space-y-2') return this._spaceY2 || null;
+        return null;
+      },
+      querySelector() {
+        return null;
+      },
+      querySelectorAll() {
+        return [];
+      }
+    };
+    Object.defineProperty(el, 'innerHTML', {
+      get() {
+        return '';
+      },
+      set(v) {
+        if (v === '') {
+          this.children = [];
+          this.firstChild = null;
+        }
+      }
+    });
+    return el;
+  }
+
+  const fakeBody = makeFakeElement('body');
+  const fakeHead = makeFakeElement('head');
+  const fakeDoc = {
+    hidden: false,
+    title: 'Antigravity',
+    body: fakeBody,
+    head: fakeHead,
+    createElement: (t) => makeFakeElement(t),
+    createElementNS: (_ns, t) => makeFakeElement(t),
+    getElementById: (id) => elementsById.get(id) || null,
+    querySelectorAll: (sel) => (sel === '.agy-card' ? agyCards : []),
+    createTreeWalker: (root) => {
+      let yielded = false;
+      return {
+        currentNode: null,
+        nextNode() {
+          if (!yielded && root && root._h3Text) {
+            yielded = true;
+            this.currentNode = { nodeType: 3, nodeValue: root._h3Text };
+            return this.currentNode;
+          }
+          return null;
+        }
+      };
+    },
+    addEventListener() {},
+    removeEventListener() {}
+  };
+
+  const sandbox = {
+    window: null,
+    document: fakeDoc,
+    NodeFilter: { SHOW_TEXT: 4, SHOW_ELEMENT: 1, FILTER_ACCEPT: 1, FILTER_REJECT: 2, FILTER_SKIP: 3 },
+    MutationObserver: StrictMutationObserver,
+    WeakMap,
+    Set,
+    Map,
+    requestAnimationFrame: (fn) => {
+      fn();
+      return 1;
+    },
+    cancelAnimationFrame: () => {},
+    setTimeout: () => 1,
+    clearTimeout: () => {}
+  };
+  sandbox.window = sandbox;
+  sandbox.window.top = sandbox.window;
+  sandbox.window.location = { protocol: 'https:', href: 'https://127.0.0.1:60252/?project=outside-of-project' };
+
+  vm.runInNewContext(injectorSrc, sandbox);
+  assert.equal(typeof sandbox.window.__AGI18N_BOOT__, 'function');
+
+  // Boot in English mode (enabled: false) BEFORE Settings modal is opened
+  sandbox.window.__AGI18N_BOOT__({
+    buildId: 'agi18n-en-test',
+    locale: 'en',
+    enabled: false,
+    localeOptions: LOCALE_MENU_OPTIONS,
+    dict: {}
+  });
+
+  assert.ok(observerCallback, 'MutationObserver must remain active in English mode without throwing TypeError');
+  assert.equal('attributeFilter' in observedOptions, false);
+  assert.equal(elementsById.has('agi18n-language-row'), false);
+
+  // Simulate user opening Settings -> Appearance modal dynamically
+  const fakeH3 = { _h3Text: 'Appearance' };
+  const fakeCard = makeFakeElement('div');
+  fakeCard._spaceY2 = {
+    querySelector: (s) => (s === 'h3' ? fakeH3 : null)
+  };
+  agyCards = [fakeCard];
+
+  observerCallback([{ type: 'childList', addedNodes: [fakeCard] }]);
+
+  assert.equal(elementsById.has('agi18n-language-row'), true, 'Display Language row must mount dynamically in English mode');
+  assert.equal(elementsById.has('agi18n-language-trigger'), true);
 });
