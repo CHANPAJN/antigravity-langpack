@@ -1,0 +1,41 @@
+name: Cross-Platform CI (macOS / Windows / Linux)
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Verify on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Zero-binary gate & syntax check
+        run: node cli.mjs check
+
+      - name: Run unit & platform integration tests (plutil / ps / multi-locale)
+        run: npm test
+
+      - name: Smoke test multi-language CLI switching
+        run: |
+          node --disable-warning=ExperimentalWarning cli.mjs lang
+          node --disable-warning=ExperimentalWarning cli.mjs lang ja
+          node --disable-warning=ExperimentalWarning cli.mjs lang vi
+          node --disable-warning=ExperimentalWarning cli.mjs lang hi
+          node --disable-warning=ExperimentalWarning cli.mjs lang id
+          node --disable-warning=ExperimentalWarning cli.mjs status
+          node --disable-warning=ExperimentalWarning cli.mjs lang zh-CN
