@@ -320,7 +320,7 @@ export async function runDaemonLoop({ once = false } = {}) {
   };
 
   async function tick() {
-    if (syncing) return;
+    if (syncing || switching) return;
     syncing = true;
     ticks = (ticks + 1) % 10000;
     try {

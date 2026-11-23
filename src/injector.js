@@ -345,6 +345,8 @@
     let outsideMenuListener = null;
     const dirtyNodes = new Set();
 
+    window.__AGI18N_PENDING_LOCALE__ = '';
+
     function closeLanguagePopover() {
       const pop = document.getElementById('agi18n-language-popover');
       if (pop) pop.remove();
@@ -354,13 +356,14 @@
 
     function requestLocaleSwitch(nextLocale) {
       closeLanguagePopover();
-      if (!nextLocale || nextLocale === locale) return;
-      window.__AGI18N_PENDING_LOCALE__ = nextLocale;
+      if (!nextLocale) return;
       if (typeof window.__agi18n_switch_locale === 'function') {
         try {
           window.__agi18n_switch_locale(nextLocale);
+          return;
         } catch {}
       }
+      window.__AGI18N_PENDING_LOCALE__ = nextLocale;
     }
 
     function readOriginalText(el) {
