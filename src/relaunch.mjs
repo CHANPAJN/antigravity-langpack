@@ -289,7 +289,7 @@ export function createRelaunchMonitor() {
       const chInfo = unconnectedChannels.find((c) => c.channel === proc.channel);
       if (!chInfo || readDevToolsPort(chInfo.portFile) > 0) continue;
 
-      const maxAgeSec = proc.hasUpdatedFlag ? 30 : 22;
+      const maxAgeSec = proc.hasUpdatedFlag ? 25 : 15;
       if (proc.ageSec > maxAgeSec || hasRecentConversationWrite(chInfo.conversationsDir, 15000)) {
         exemptedByChannel.set(proc.channel, proc.pid);
         continue;
@@ -310,11 +310,11 @@ export function createRelaunchMonitor() {
         });
 
         if (process.platform === 'win32') {
-          const stopCmd = `$gp = Get-Process -Id ${proc.pid} -ErrorAction SilentlyContinue; if ($gp) { [void]$gp.CloseMainWindow(); if (-not $gp.WaitForExit(1800)) { Stop-Process -Id ${proc.pid} -Force -ErrorAction SilentlyContinue } }`;
+          const stopCmd = `$gp = Get-Process -Id ${proc.pid} -ErrorAction SilentlyContinue; if ($gp) { [void]$gp.CloseMainWindow(); [void]$gp.WaitForExit(2200) }`;
           spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', stopCmd], {
             windowsHide: true,
             stdio: 'ignore',
-            timeout: 4500
+            timeout: 4000
           });
           ensureWindowsShortcutsFlag([proc.exePath || chInfo.exePath]);
         } else {
@@ -323,10 +323,14 @@ export function createRelaunchMonitor() {
           } catch {}
         }
 
-        for (let i = 0; i < 45 && isProcessAlive(proc.pid); i++) {
+        for (let i = 0; i < 30 && isProcessAlive(proc.pid); i++) {
           sleepBlocking(80);
         }
-        sleepBlocking(180);
+        if (isProcessAlive(proc.pid)) {
+          exemptedByChannel.set(proc.channel, proc.pid);
+          return false;
+        }
+        sleepBlocking(150);
 
         if (process.platform === 'darwin') {
           const macBundle = proc.appBundle || chInfo.appBundle;

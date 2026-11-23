@@ -9,6 +9,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { LOCALE_MENU_OPTIONS, SUPPORTED_LOCALES } from '../src/locales.mjs';
 import {
+  DEFAULT_CONFIG,
   FILES,
   PROJECT_ROOT,
   createPayloadBuilder,
@@ -402,4 +403,23 @@ test('English mode (enabled: false) mounts MutationObserver without WHATWG attri
 
   assert.equal(elementsById.has('agi18n-language-row'), true, 'Display Language row must mount dynamically in English mode');
   assert.equal(elementsById.has('agi18n-language-trigger'), true);
+});
+
+test('Security & transparency gates: GPL-3.0 license, default-off telemetry/AI sync, and zero force-kill in relauncher', () => {
+  assert.equal(DEFAULT_CONFIG.collectUntranslated, false);
+  assert.equal(DEFAULT_CONFIG.autoSyncAi, false);
+
+  const pkg = readJsonFile(path.join(PROJECT_ROOT, 'package.json'), {});
+  assert.equal(pkg.license, 'GPL-3.0-only');
+
+  const licenseText = fs.readFileSync(path.join(PROJECT_ROOT, 'LICENSE'), 'utf8');
+  assert.ok(licenseText.includes('GNU GENERAL PUBLIC LICENSE'));
+  assert.ok(licenseText.includes('Version 3, 29 June 2007'));
+
+  const relaunchSrc = fs.readFileSync(path.join(PROJECT_ROOT, 'src', 'relaunch.mjs'), 'utf8');
+  assert.equal(/-Force\b|SIGKILL\b|taskkill\s+\/F/i.test(relaunchSrc), false, 'relaunch.mjs must never force-kill user processes');
+
+  const cliSrc = fs.readFileSync(path.join(PROJECT_ROOT, 'cli.mjs'), 'utf8');
+  assert.ok(cliSrc.includes("'--mode', 'plan', '--sandbox'"), 'sync-ai must enforce plan mode and sandbox isolation');
+  assert.ok(cliSrc.includes("args.includes('--with-skill')"), 'SKILL.md installation must be strictly opt-in');
 });

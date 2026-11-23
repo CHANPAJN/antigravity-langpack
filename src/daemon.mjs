@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import {
+  DICT_DIR,
   PROJECT_ROOT,
   createPayloadBuilder,
   readDevToolsPort,
@@ -17,8 +18,8 @@ import {
 import { createRelaunchMonitor } from './relaunch.mjs';
 import { PID_LOCK_FILE, readDaemonPid } from './service.mjs';
 
-const SYNC_INTERVAL_MS = 2500;
-const DISCOVERY_INTERVAL_MS = 2500;
+const SYNC_INTERVAL_MS = 4000;
+const DISCOVERY_INTERVAL_MS = 4000;
 const AUTO_AI_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 const AUTO_AI_STATE_FILE = path.join(os.tmpdir(), 'antigravity-langpack-autosync.json');
 const BINDING_NAME = '__agi18n_switch_locale';
@@ -261,7 +262,7 @@ export async function runDaemonLoop({ once = false } = {}) {
   let ticks = 0;
 
   async function maybeTriggerBackgroundAiSync(config) {
-    if (autoAiRunning || config.enabled === false || config.autoSyncAi === false || config.locale === 'en') return;
+    if (autoAiRunning || config.enabled === false || config.autoSyncAi !== true || config.locale === 'en') return;
     const state = readJsonFile(AUTO_AI_STATE_FILE, {});
     const lastRun = Number(state[config.locale] || 0);
     if (Date.now() - lastRun < AUTO_AI_COOLDOWN_MS) return;
@@ -378,6 +379,19 @@ export async function runDaemonLoop({ once = false } = {}) {
     sessions.clear();
     return;
   }
+  let watchDebounce = null;
+  try {
+    if (fs.existsSync(DICT_DIR)) {
+      const watcher = fs.watch(DICT_DIR, () => {
+        if (watchDebounce) clearTimeout(watchDebounce);
+        watchDebounce = setTimeout(() => {
+          watchDebounce = null;
+          tick().catch(() => {});
+        }, 60);
+      });
+      watcher.unref?.();
+    }
+  } catch {}
   setInterval(() => tick().catch(() => {}), SYNC_INTERVAL_MS);
 }
 

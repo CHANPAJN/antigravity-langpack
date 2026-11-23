@@ -92,12 +92,10 @@ export function installSkillLink() {
 
 export function removeSkillLink() {
   const home = os.homedir();
-  for (const name of ['antigravity-langpack-sync', 'antigravity-langpack-sync']) {
-    const dstDir = path.join(home, '.gemini', 'config', 'skills', name);
-    try {
-      if (fs.existsSync(dstDir)) fs.rmSync(dstDir, { recursive: true, force: true });
-    } catch {}
-  }
+  const dstDir = path.join(home, '.gemini', 'config', 'skills', 'antigravity-langpack-sync');
+  try {
+    if (fs.existsSync(dstDir)) fs.rmSync(dstDir, { recursive: true, force: true });
+  } catch {}
 }
 
 export function installMacShellLaunchers(channels = [], targetAppsDir = path.join(os.homedir(), 'Applications')) {

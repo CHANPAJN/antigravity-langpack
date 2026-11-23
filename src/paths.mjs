@@ -28,8 +28,8 @@ export const DEFAULT_CONFIG = Object.freeze({
   channel: 'auto',
   autoRelaunchCdp: true,
   enableCustomCss: true,
-  collectUntranslated: true,
-  autoSyncAi: true
+  collectUntranslated: false,
+  autoSyncAi: false
 });
 
 export function resolveLocaleFiles(localeCode = 'zh-CN') {
@@ -235,7 +235,8 @@ export function createPayloadBuilder() {
       channel: ['auto', 'stable', 'insiders'].includes(rawCfg.channel) ? rawCfg.channel : 'auto',
       autoRelaunchCdp: rawCfg.autoRelaunchCdp !== false,
       enableCustomCss: rawCfg.enableCustomCss !== false,
-      collectUntranslated: rawCfg.collectUntranslated !== false
+      collectUntranslated: rawCfg.collectUntranslated === true,
+      autoSyncAi: rawCfg.autoSyncAi === true
     };
 
     const { merged } = loadMergedDictionary(locale);

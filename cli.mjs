@@ -309,8 +309,9 @@ export async function runKeyFreeAiSync({ localeCode = '', explicitCandidates = n
 
   const run = spawnSync(
     agyBin,
-    ['--disable-slash-commands', '--output-format', 'text', '--json-schema', schema, '-p', fullPrompt],
+    ['--mode', 'plan', '--sandbox', '--disable-slash-commands', '--output-format', 'text', '--json-schema', schema, '-p', fullPrompt],
     {
+      cwd: os.tmpdir(),
       encoding: 'utf8',
       windowsHide: true,
       timeout: 90000,
@@ -469,7 +470,7 @@ async function main() {
     try {
       serviceId = configureAutostart(true);
     } catch {}
-    const skillPath = installSkillLink();
+    const skillPath = args.includes('--with-skill') ? installSkillLink() : '';
     const pid = startBackgroundDaemon();
     const cfg = readJsonFile(FILES.config, {});
     const sandboxHint =
@@ -541,7 +542,7 @@ async function main() {
     }
     const parsed = extractJsonObjectFromText(rawInput);
     if (!parsed) throw new Error('Input is not valid JSON.');
-    const { accepted, rejected } = validateAndFilterTranslations(parsed, locale);
+    const { accepted, rejected } = validateAndFilterTranslations(parsed, langOpt);
     const saved = saveLearnedTranslations(accepted, langOpt);
     console.log(
       JSON.stringify(
