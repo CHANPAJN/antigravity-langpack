@@ -12,6 +12,11 @@
   <a href="./docs/README.ko.md">한국어</a>
 </p>
 
+<p>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="GPL-3.0 License" /></a>
+  <a href="https://linux.do"><img src="https://img.shields.io/badge/Community-LINUX%20DO-1C1C1E?style=flat-square&logo=linux&logoColor=34D399" alt="LINUX DO Community" /></a>
+</p>
+
 <p align="center">
   <img src="./docs/demo.gif" width="840" alt="antigravity-langpack Native Display Language Switcher Demo" />
 </p>
@@ -112,6 +117,7 @@ node cli.mjs install --with-skill
 
 ---
 
-## License
+## License & Community
 
-Released under the [GNU General Public License v3.0 (GPL-3.0)](./LICENSE).
+- Released under the [GNU General Public License v3.0 (GPL-3.0)](./LICENSE).
+- Community discussion & feedback: **[LINUX DO](https://linux.do)** — thanks to the LINUX DO community for feedback and support.

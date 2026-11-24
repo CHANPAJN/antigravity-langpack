@@ -12,6 +12,11 @@
   <a href="./README.ko.md">한국어</a>
 </p>
 
+<p>
+  <a href="../LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="GPL-3.0 License" /></a>
+  <a href="https://linux.do"><img src="https://img.shields.io/badge/开源社区-LINUX%20DO-1C1C1E?style=flat-square&logo=linux&logoColor=34D399" alt="LINUX DO 社区" /></a>
+</p>
+
 <p align="center">
   <img src="./demo.gif" width="840" alt="antigravity-langpack Native Display Language Switcher Demo" />
 </p>
@@ -76,6 +81,7 @@ Windows 用户也可直接双击仓库根目录的纯明文 `install.cmd` 完成
 
 ---
 
-## 开源许可
+## 开源许可与社区
 
-本项目采用 OSI 认证的 [GNU General Public License v3.0 (GPL-3.0)](../LICENSE) 开源许可协议。任何衍生修改或打包分发版本均须以相同 GPL-3.0 协议完整公开源代码。
+- 本项目采用 OSI 认证的 [GNU General Public License v3.0 (GPL-3.0)](../LICENSE) 开源许可协议。任何衍生修改或打包分发版本均须以相同 GPL-3.0 协议完整公开源代码。
+- 社区交流与反馈：感谢 **[LINUX DO](https://linux.do)** 社区的开源分享氛围与各位佬友的反馈支持。
