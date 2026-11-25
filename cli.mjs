@@ -32,7 +32,8 @@ import {
   removeSkillLink,
   startBackgroundDaemon,
   stopBackgroundDaemon,
-  syncAgentLanguageRule
+  syncAgentLanguageRule,
+  syncIdeDisplayLanguage
 } from './src/service.mjs';
 import { evaluateOnTarget, fetchDevToolsPages } from './src/daemon.mjs';
 
@@ -50,8 +51,11 @@ const PROTECTED_TERMS = new Set([
   'Orchestrator (Argon)',
   'Orchestrator (Neon)',
   'Antigravity',
+  'Antigravity IDE',
   'Antigravity Insiders',
   'Google Antigravity',
+  'Google',
+  'Google Data Cloud',
   'Worktree',
   'Ctrl',
   'Alt',
@@ -162,7 +166,7 @@ const LIVE_DOM_SCAN_EXPR = `(() => {
   }
   const origMap = rt && rt.textOrigMap instanceof WeakMap ? rt.textOrigMap : null;
   const docTitlePrefix = String(document.title || '').split(' - ')[0].trim();
-  const skipSel = 'code, pre, kbd, samp, script, style, noscript, textarea, input, [contenteditable="true"], .monaco-editor, .monaco-diff-editor, .xterm, [class*="xterm"], .prose, .markdown, [data-markdown-root], [data-testid*="message"], [data-testid*="turn"], [data-testid*="terminal"], [data-testid*="history"], [data-testid="tab-file-tree-sidebar"], [aria-label="File path breadcrumbs"], [data-testid="conversation-row-sidebar"] a[href^="/c/"], [data-testid="conversation-row-sidebar"] span.truncate, [data-testid="conversation-row-history"] a[href^="/c/"], [data-testid="conversation-row-history"] span.truncate, [data-testid="breadcrumb-segment"], [data-agi18n-ignore="true"]';
+  const skipSel = 'code, pre, kbd, samp, script, style, noscript, textarea, input, [contenteditable="true"], .monaco-editor, .monaco-diff-editor, .explorer-folders-view, .tabs-and-actions-container .tab-label, .breadcrumbs-below-tabs, #status\\\\.scm, .xterm, [class*="xterm"], .prose, .markdown, [data-markdown-root], [data-testid*="message"], [data-testid*="turn"], [data-testid*="terminal"], [data-testid*="history"], [data-testid="tab-file-tree-sidebar"], [aria-label="File path breadcrumbs"], [data-testid="conversation-row-sidebar"] a[href^="/c/"], [data-testid="conversation-row-sidebar"] span.truncate, [data-testid="conversation-row-history"] a[href^="/c/"], [data-testid="conversation-row-history"] span.truncate, [data-testid="breadcrumb-segment"], [data-agi18n-ignore="true"]';
   if (document.body) {
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode() && out.size < 400) {
@@ -225,7 +229,9 @@ export async function collectLiveUntranslated(explicitLocale = '') {
     if (!port) continue;
     const pages = await fetchDevToolsPages(port);
     for (const page of pages) {
-      if (page.type !== 'page') continue;
+      const isScannableIframe =
+        page.type === 'iframe' && /^https?:\/\/(?:127\.0\.0\.1|localhost):\d+\//i.test(String(page.url || ''));
+      if (page.type !== 'page' && !isScannableIframe) continue;
       const res = await evaluateOnTarget(page.webSocketDebuggerUrl, LIVE_DOM_SCAN_EXPR, 3000);
       if (res.ok && Array.isArray(res.value)) {
         scannedWindows.push({ channel: ch.channel, title: page.title || 'Workbench' });
@@ -428,6 +434,7 @@ async function main() {
     if (targetArg) {
       const updated = writeConfigFile({ locale: targetArg });
       syncAgentLanguageRule(updated.locale, updated.syncAiOutputLang === true);
+      const ideLang = syncIdeDisplayLanguage(updated.locale);
       const { dictCount } = createPayloadBuilder().refreshIfNeeded();
       console.log(
         JSON.stringify(
@@ -435,7 +442,8 @@ async function main() {
             ok: true,
             activeLocale: updated.locale,
             languageName: updated.locale === 'en' ? 'English (Default)' : SUPPORTED_LOCALES[updated.locale]?.name,
-            dictCount
+            dictCount,
+            ...(ideLang.installed ? { ideLang } : {})
           },
           null,
           2
@@ -495,7 +503,9 @@ async function main() {
     }
     if (Object.keys(installPatch).length > 0) writeConfigFile(installPatch);
     const currentCfg = readJsonFile(FILES.config, {});
-    syncAgentLanguageRule(currentCfg.locale || 'zh-CN', currentCfg.syncAiOutputLang === true);
+    const activeLoc = currentCfg.locale || 'zh-CN';
+    syncAgentLanguageRule(activeLoc, currentCfg.syncAiOutputLang === true);
+    const ideLang = syncIdeDisplayLanguage(activeLoc);
     const channels = resolveActiveChannels('auto');
     let updatedShortcuts = 0;
     let macLaunchers = [];
@@ -529,6 +539,7 @@ async function main() {
           updatedShortcuts,
           macLaunchers,
           skillInstalled: skillPath,
+          ...(ideLang.installed ? { ideLang } : {}),
           ...(sandboxHint ? { sandboxHint } : {})
         },
         null,
@@ -543,6 +554,7 @@ async function main() {
     configureAutostart(false);
     removeSkillLink();
     syncAgentLanguageRule('en', false);
+    syncIdeDisplayLanguage('en', { skipExtensionInstall: true });
     if (process.platform === 'darwin') removeMacShellLaunchers();
     for (const ch of resolveActiveChannels('auto')) {
       const port = readDevToolsPort(ch.portFile);

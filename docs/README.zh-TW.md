@@ -2,8 +2,8 @@
 
 # antigravity-langpack
 
-Google Antigravity（`Stable` & `Insiders`）純文字原生多語系介面包。  
-基於本機 CDP 事件流掛載，免改 `app.asar`、保留 macOS 官方公證簽章，內建 15 套離線詞庫（每套 2,065 條）。
+**Google Antigravity 2.0（`Stable` & `Insiders`）** 與 **`Antigravity IDE`** 純文字原生多語系介面包。  
+同一個輕量背景服務按所選語系自動同步對應之 IDE 外殼語言包，並將官方語言包未涵蓋的**右側 Agent 面板、Antigravity Settings 專屬設定頁與行內 Diff/補全按鈕**即時在地化——免改 `app.asar`、保留 macOS 官方公證簽章，內建 15 套離線詞庫（每套 2,110 條）。
 
 <p>
   <a href="../README.md">English</a> ·

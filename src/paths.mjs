@@ -101,22 +101,24 @@ export function statSignature(filePath) {
   }
 }
 
-export function resolveChannelInfo(channelId) {
-  const home = os.homedir();
+export function resolveChannelInfo(channelId, { customHome = '' } = {}) {
+  const home = customHome || os.homedir();
   const isInsiders = channelId === 'insiders';
-  const appDataName = isInsiders ? 'Antigravity - Insiders' : 'Antigravity';
+  const isIde = channelId === 'ide';
+  const appDataName = isIde ? 'Antigravity IDE' : isInsiders ? 'Antigravity - Insiders' : 'Antigravity';
   const geminiStateName = isInsiders ? 'antigravity-insiders' : 'antigravity';
 
   let userDataDir = '';
   let exeCandidates = [];
+  let cliCandidates = [];
   let macAppBundles = [];
 
   if (process.platform === 'win32') {
-    const appData = process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
-    const localAppData = process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local');
+    const appData = customHome ? path.join(home, 'AppData', 'Roaming') : process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
+    const localAppData = customHome ? path.join(home, 'AppData', 'Local') : process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local');
     const progFiles = process.env.ProgramFiles || 'C:\\Program Files';
-    const winInstallFolder = isInsiders ? 'antigravity-insiders' : 'antigravity';
-    const winExeName = isInsiders ? 'Antigravity - Insiders.exe' : 'Antigravity.exe';
+    const winInstallFolder = isIde ? 'Antigravity IDE' : isInsiders ? 'antigravity-insiders' : 'antigravity';
+    const winExeName = isIde ? 'Antigravity IDE.exe' : isInsiders ? 'Antigravity - Insiders.exe' : 'Antigravity.exe';
     userDataDir = path.join(appData, appDataName);
     exeCandidates = [
       path.join(localAppData, 'Programs', winInstallFolder, winExeName),
@@ -124,22 +126,49 @@ export function resolveChannelInfo(channelId) {
       path.join(progFiles, winInstallFolder, winExeName),
       path.join(progFiles, appDataName, winExeName)
     ];
+    if (isIde) {
+      cliCandidates = [
+        path.join(localAppData, 'Programs', 'Antigravity IDE', 'bin', 'antigravity-ide.cmd'),
+        path.join(progFiles, 'Antigravity IDE', 'bin', 'antigravity-ide.cmd')
+      ];
+    }
   } else if (process.platform === 'darwin') {
     const bundleName = `${appDataName}.app`;
     userDataDir = path.join(home, 'Library', 'Application Support', appDataName);
     macAppBundles = [path.join('/Applications', bundleName), path.join(home, 'Applications', bundleName)];
-    exeCandidates = macAppBundles.map((b) => path.join(b, 'Contents', 'MacOS', appDataName));
+    exeCandidates = isIde
+      ? macAppBundles.flatMap((b) => [
+          path.join(b, 'Contents', 'MacOS', 'Electron'),
+          path.join(b, 'Contents', 'MacOS', appDataName)
+        ])
+      : macAppBundles.map((b) => path.join(b, 'Contents', 'MacOS', appDataName));
+    if (isIde) {
+      cliCandidates = [
+        ...macAppBundles.map((b) => path.join(b, 'Contents', 'Resources', 'app', 'bin', 'antigravity-ide')),
+        '/usr/local/bin/antigravity-ide'
+      ];
+    }
   } else {
-    const xdgConfig = process.env.XDG_CONFIG_HOME || path.join(home, '.config');
-    const linuxBin = isInsiders ? 'antigravity-insiders' : 'antigravity';
+    const xdgConfig = customHome ? path.join(home, '.config') : process.env.XDG_CONFIG_HOME || path.join(home, '.config');
+    const linuxBin = isIde ? 'antigravity-ide' : isInsiders ? 'antigravity-insiders' : 'antigravity';
     userDataDir = path.join(xdgConfig, appDataName);
-    exeCandidates = [`/usr/bin/${linuxBin}`, `/usr/local/bin/${linuxBin}`, `/opt/${appDataName}/${linuxBin}`];
+    exeCandidates = [
+      `/usr/bin/${linuxBin}`,
+      `/usr/local/bin/${linuxBin}`,
+      `/opt/${appDataName}/${linuxBin}`,
+      `/usr/share/${linuxBin}/${linuxBin}`
+    ];
+    if (isIde) cliCandidates = exeCandidates;
   }
 
   const exePath = exeCandidates.find((p) => fs.existsSync(p)) || '';
+  const cliPath = cliCandidates.find((p) => fs.existsSync(p)) || '';
   const appBundle = macAppBundles.find((b) => fs.existsSync(b)) || '';
   const portFile = path.join(userDataDir, 'DevToolsActivePort');
   const conversationsDir = path.join(home, '.gemini', geminiStateName, 'conversations');
+  const ideDotDir = isIde ? path.join(home, '.antigravity-ide') : '';
+  const argvPath = isIde ? path.join(ideDotDir, 'argv.json') : '';
+  const extensionsDir = isIde ? path.join(ideDotDir, 'extensions') : '';
   const installed = Boolean(exePath || appBundle || fs.existsSync(userDataDir));
 
   return {
@@ -148,8 +177,11 @@ export function resolveChannelInfo(channelId) {
     userDataDir,
     portFile,
     exePath,
+    cliPath,
     appBundle,
     conversationsDir,
+    argvPath,
+    extensionsDir,
     installed
   };
 }
@@ -157,7 +189,8 @@ export function resolveChannelInfo(channelId) {
 export function resolveActiveChannels(channelMode = 'auto') {
   if (channelMode === 'stable') return [resolveChannelInfo('stable')];
   if (channelMode === 'insiders') return [resolveChannelInfo('insiders')];
-  return [resolveChannelInfo('stable'), resolveChannelInfo('insiders')];
+  if (channelMode === 'ide') return [resolveChannelInfo('ide')];
+  return [resolveChannelInfo('stable'), resolveChannelInfo('insiders'), resolveChannelInfo('ide')];
 }
 
 export function readDevToolsPort(portFile) {
@@ -233,7 +266,7 @@ export function createPayloadBuilder() {
     const config = {
       enabled,
       locale,
-      channel: ['auto', 'stable', 'insiders'].includes(rawCfg.channel) ? rawCfg.channel : 'auto',
+      channel: ['auto', 'stable', 'insiders', 'ide'].includes(rawCfg.channel) ? rawCfg.channel : 'auto',
       autoRelaunchCdp: rawCfg.autoRelaunchCdp !== false,
       enableCustomCss: rawCfg.enableCustomCss !== false,
       collectUntranslated: rawCfg.collectUntranslated === true,

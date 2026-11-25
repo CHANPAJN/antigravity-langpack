@@ -15,6 +15,7 @@ import {
   createPayloadBuilder,
   loadMergedDictionary,
   readJsonFile,
+  resolveActiveChannels,
   resolveLocaleFiles,
   writeConfigFile
 } from '../src/paths.mjs';
@@ -22,7 +23,9 @@ import { parsePosixElapsedSeconds, parsePosixHostProcessRow } from '../src/relau
 import {
   AI_LANG_RULE_FILENAME,
   configureAutostart,
+  ensureIdeLanguagePacksRegistry,
   installMacShellLaunchers,
+  patchVscodeArgvJsonc,
   removeMacShellLaunchers,
   syncAgentLanguageRule
 } from '../src/service.mjs';
@@ -273,6 +276,7 @@ test('English mode (enabled: false) mounts MutationObserver without WHATWG attri
 
   const elementsById = new Map();
   let agyCards = [];
+  let h2List = [];
 
   function makeFakeElement(tag) {
     const el = {
@@ -320,6 +324,7 @@ test('English mode (enabled: false) mounts MutationObserver without WHATWG attri
       removeEventListener() {},
       closest(sel) {
         if (sel === '.space-y-2') return this._spaceY2 || null;
+        if (sel === '.max-w-2xl') return this._maxW2xl || null;
         return null;
       },
       querySelector() {
@@ -353,7 +358,7 @@ test('English mode (enabled: false) mounts MutationObserver without WHATWG attri
     createElement: (t) => makeFakeElement(t),
     createElementNS: (_ns, t) => makeFakeElement(t),
     getElementById: (id) => elementsById.get(id) || null,
-    querySelectorAll: (sel) => (sel === '.agy-card' ? agyCards : []),
+    querySelectorAll: (sel) => (sel === '.agy-card' ? agyCards : sel === 'h2' ? h2List : []),
     createTreeWalker: (root) => {
       let yielded = false;
       return {
@@ -420,6 +425,21 @@ test('English mode (enabled: false) mounts MutationObserver without WHATWG attri
 
   assert.equal(elementsById.has('agi18n-language-row'), true, 'Display Language row must mount dynamically in English mode');
   assert.equal(elementsById.has('agi18n-language-trigger'), true);
+
+  // Simulate Antigravity IDE standalone settings (<h2> Appearance without Theme .agy-card)
+  elementsById.clear();
+  agyCards = [];
+  const ideSectionsWrap = makeFakeElement('div');
+  const idePanel = makeFakeElement('div');
+  idePanel.children = [makeFakeElement('div'), ideSectionsWrap];
+  const fakeIdeH2 = makeFakeElement('h2');
+  fakeIdeH2._h3Text = 'Appearance';
+  fakeIdeH2._maxW2xl = idePanel;
+  h2List = [fakeIdeH2];
+
+  observerCallback([{ type: 'childList', addedNodes: [fakeIdeH2] }]);
+  assert.equal(elementsById.has('agi18n-ide-appearance-card'), true, 'IDE standalone settings must create Appearance card');
+  assert.equal(elementsById.has('agi18n-language-row'), true, 'Display Language row must mount inside IDE Appearance card');
 });
 
 test('Security & transparency gates: GPL-3.0 license, default-off telemetry/AI sync, and zero force-kill in relauncher', () => {
@@ -632,5 +652,75 @@ test('Opt-in AI thinking/reply language sync defaults to false, switches cleanly
     assert.equal(fs.existsSync(userRule), true);
   } finally {
     fs.rmSync(tmpHome, { recursive: true, force: true });
+  }
+});
+
+test('2-in-1 Antigravity IDE channel discovery, JSONC argv.json patching & languagepacks.json registry work cleanly', () => {
+  const channels = resolveActiveChannels('auto').map((c) => c.channel);
+  assert.deepEqual(channels, ['stable', 'insiders', 'ide']);
+
+  const macIde = parsePosixHostProcessRow(
+    '  7210   00:09 /Applications/Antigravity IDE.app/Contents/MacOS/Electron --remote-debugging-port=0',
+    'darwin'
+  );
+  assert.equal(macIde.channel, 'ide');
+  assert.equal(macIde.appBundle, '/Applications/Antigravity IDE.app');
+  assert.equal(macIde.hasCdpFlag, true);
+
+  const linuxIde = parsePosixHostProcessRow('  8312   00:12 /usr/bin/antigravity-ide', 'linux');
+  assert.equal(linuxIde.channel, 'ide');
+  assert.equal(linuxIde.hasCdpFlag, false);
+
+  const rawArgv = [
+    '// VS Code runtime arguments',
+    '{',
+    '\t"enable-crash-reporter": true,',
+    '\t// Do not edit crash id',
+    '\t"crash-reporter-id": "abc-123"',
+    '}'
+  ].join('\n');
+  const patchedZh = patchVscodeArgvJsonc(rawArgv, 'zh-cn');
+  assert.ok(patchedZh.includes('// VS Code runtime arguments'));
+  assert.ok(patchedZh.includes('"crash-reporter-id": "abc-123",'));
+  assert.ok(patchedZh.includes('"locale": "zh-cn"'));
+
+  const patchedRu = patchVscodeArgvJsonc(patchedZh, 'ru');
+  assert.ok(patchedRu.includes('"locale": "ru"'));
+  assert.equal(patchedRu.includes('"locale": "zh-cn"'), false);
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agi18n-ide-reg-'));
+  try {
+    const userDataDir = path.join(tmpDir, 'userData');
+    const extRoot = path.join(tmpDir, 'extensions');
+    const extDir = path.join(extRoot, 'ms-ceintl.vscode-language-pack-zh-hans-1.106.0-universal');
+    const transDir = path.join(extDir, 'translations');
+    fs.mkdirSync(transDir, { recursive: true });
+    fs.writeFileSync(path.join(transDir, 'main.i18n.json'), '{"contents":{}}', 'utf8');
+    fs.writeFileSync(
+      path.join(extDir, 'package.json'),
+      JSON.stringify({
+        name: 'vscode-language-pack-zh-hans',
+        publisher: 'MS-CEINTL',
+        version: '1.106.0',
+        contributes: {
+          localizations: [
+            {
+              languageId: 'zh-cn',
+              localizedLanguageName: '中文(简体)',
+              translations: [{ id: 'vscode', path: './translations/main.i18n.json' }]
+            }
+          ]
+        }
+      }),
+      'utf8'
+    );
+
+    const ok = ensureIdeLanguagePacksRegistry(userDataDir, extRoot, 'MS-CEINTL.vscode-language-pack-zh-hans');
+    assert.equal(ok, true);
+    const reg = JSON.parse(fs.readFileSync(path.join(userDataDir, 'languagepacks.json'), 'utf8'));
+    assert.equal(typeof reg['zh-cn']?.hash, 'string');
+    assert.ok(reg['zh-cn'].translations.vscode.endsWith('main.i18n.json'));
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });

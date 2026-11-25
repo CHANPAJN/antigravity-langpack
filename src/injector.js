@@ -16,6 +16,10 @@
     '[contenteditable="true"]',
     '.monaco-editor',
     '.monaco-diff-editor',
+    '.explorer-folders-view',
+    '.tabs-and-actions-container .tab-label',
+    '.breadcrumbs-below-tabs',
+    '#status\\.scm',
     '.xterm',
     '.prose',
     '.markdown',
@@ -33,6 +37,10 @@
   const SKIP_FORM_PARENT_SEL = [
     '.monaco-editor',
     '.monaco-diff-editor',
+    '.explorer-folders-view',
+    '.tabs-and-actions-container .tab-label',
+    '.breadcrumbs-below-tabs',
+    '#status\\.scm',
     '.xterm',
     '[data-markdown-root]',
     '[data-testid="user-message-content"]'
@@ -52,9 +60,12 @@
     'Orchestrator (Argon)',
     'Orchestrator (Neon)',
     'Antigravity',
+    'Antigravity IDE',
     'Antigravity Insiders',
     'Google Antigravity',
     'Gemini',
+    'Google',
+    'Google Data Cloud',
     'Claude',
     'GitHub',
     'Google Drive',
@@ -382,7 +393,7 @@
     if ((m = trimmed.match(/^([^\r\n]{1,200}?)\s*·\s*Exited with code\s+(-?\d+)$/))) {
       return `${m[1].trim()} · ${fillTpl(pat.exitedCode, { 0: m[2] })}`;
     }
-    if ((m = trimmed.match(/^Your Plan:\s*([^\r\n]{1,80})$/))) {
+    if ((m = trimmed.match(/^Your Plan:\s*([^\r\n]{1,80})$/i))) {
       return fillTpl(pat.yourPlan, { 0: m[1].trim() });
     }
     if ((m = trimmed.match(/^Available AI Credits:\s*([^\r\n]{1,40})$/i))) {
@@ -532,10 +543,15 @@
 
   window.__AGI18N_BOOT__ = function bootAgI18n(payload) {
     const isSubFrame = window.top !== window;
-    if (isSubFrame) {
-      const isSwarmFrame = window.location?.protocol === 'plugin:' && /^swarm--/i.test(window.location?.hostname || '');
-      if (!isSwarmFrame) return;
+    const locProto = String(window.location?.protocol || '');
+    const locHref = String(window.location?.href || '');
+    const isSwarmFrame = locProto === 'plugin:' && /^swarm--/i.test(window.location?.hostname || '');
+    const isJetskiIdeFrame = /^https?:\/\/(?:127\.0\.0\.1|localhost):\d+\//i.test(locHref);
+    const isVscodeWebviewFrame = locProto === 'vscode-webview:';
+    if (isSubFrame && !isSwarmFrame && !isJetskiIdeFrame && !isVscodeWebviewFrame) {
+      return;
     }
+    const blockAppearanceRow = (isSubFrame && !isJetskiIdeFrame) || isVscodeWebviewFrame;
     if (!payload || typeof payload !== 'object') return;
 
     const prevRuntime = window.__AGI18N_RUNTIME__;
@@ -606,14 +622,16 @@
     }
 
     function findAppearanceTargetCard() {
-      const cards = document.querySelectorAll('.agy-card');
-      if (cards.length === 0) return null;
+      const cards = Array.from(document.querySelectorAll('.agy-card')).filter(
+        (c) => c.id !== 'agi18n-ide-appearance-card'
+      );
 
       // 1. Insiders & modern layout: section with <h3> "Appearance" wrapping .agy-card (Theme / Contrast / Font / Font size)
       for (const card of cards) {
         const sec = card.closest('.space-y-2');
         const h3 = sec ? sec.querySelector('h3') : null;
         if (h3 && readOriginalText(h3) === 'Appearance') {
+          document.getElementById('agi18n-ide-appearance-sec')?.remove();
           return card;
         }
       }
@@ -621,18 +639,71 @@
       // 2. Fallback: card containing Theme + Font rows, or theme-preset selector on Stable
       for (const card of cards) {
         if (card.querySelector('[id^="theme-preset-label-"]')) {
+          document.getElementById('agi18n-ide-appearance-sec')?.remove();
           return card;
         }
         const rowTitles = Array.from(card.querySelectorAll(':scope > div span:first-child')).map((s) => readOriginalText(s));
         if (rowTitles.includes('Theme') && (rowTitles.includes('Font') || rowTitles.includes('Font size') || rowTitles.includes('Font Size'))) {
+          document.getElementById('agi18n-ide-appearance-sec')?.remove();
           return card;
         }
       }
+
+      // 3. Antigravity IDE standalone settings: Theme is delegated to VS Code host, so <h2> "Appearance" has no Theme card
+      const appH2 = Array.from(document.querySelectorAll('h2')).find((h) => readOriginalText(h) === 'Appearance');
+      if (appH2) {
+        const panel = appH2.closest('.max-w-2xl') || appH2.parentElement?.parentElement?.parentElement?.parentElement;
+        const sectionsWrap =
+          panel?.querySelector(':scope > .flex.flex-col.gap-8') ||
+          (panel && panel.children.length > 1 ? panel.children[1] : null);
+        if (sectionsWrap) {
+          let ideSec = document.getElementById('agi18n-ide-appearance-sec');
+          let ideCard = document.getElementById('agi18n-ide-appearance-card');
+          let ideH3 = document.getElementById('agi18n-ide-appearance-h3');
+          if (!ideSec || !ideCard || !ideH3) {
+            if (ideSec) ideSec.remove();
+            ideSec = document.createElement('div');
+            ideSec.id = 'agi18n-ide-appearance-sec';
+            ideSec.setAttribute('data-agi18n-ignore', 'true');
+            ideSec.className = 'space-y-2';
+
+            const hdrOuter = document.createElement('div');
+            hdrOuter.className = 'flex flex-col gap-1';
+            const hdrRow = document.createElement('div');
+            hdrRow.className = 'flex items-center justify-between';
+            const hdrInner = document.createElement('div');
+            hdrInner.className = 'flex items-center gap-1.5';
+            ideH3 = document.createElement('h3');
+            ideH3.id = 'agi18n-ide-appearance-h3';
+            ideH3.className = 'm-0 font-medium';
+            hdrInner.appendChild(ideH3);
+            hdrRow.appendChild(hdrInner);
+            hdrOuter.appendChild(hdrRow);
+
+            const cardWrap = document.createElement('div');
+            ideCard = document.createElement('div');
+            ideCard.id = 'agi18n-ide-appearance-card';
+            ideCard.className =
+              'agy-card bg-transparent rounded-xl border border-border overflow-hidden divide-y divide-border';
+            cardWrap.appendChild(ideCard);
+
+            ideSec.appendChild(hdrOuter);
+            ideSec.appendChild(cardWrap);
+            sectionsWrap.insertBefore(ideSec, sectionsWrap.firstChild);
+          } else if (ideSec.parentElement !== sectionsWrap) {
+            sectionsWrap.insertBefore(ideSec, sectionsWrap.firstChild);
+          }
+          const uiCopy = LANG_UI_LABELS[locale] || LANG_UI_LABELS.en;
+          ideH3.textContent = enabled ? dict.Appearance || uiCopy.title : 'Appearance';
+          return ideCard;
+        }
+      }
+
       return null;
     }
 
     function ensureAppearanceLanguageRow() {
-      if (isSubFrame || localeOptions.length === 0) return;
+      if (blockAppearanceRow || localeOptions.length === 0) return;
       const themeCard = findAppearanceTargetCard();
       if (!themeCard) {
         closeLanguagePopover();
@@ -716,7 +787,7 @@
         pop.setAttribute('role', 'listbox');
         Object.assign(pop.style, {
           position: 'fixed',
-          top: `${Math.min(window.innerHeight - 350, rect.bottom + 4)}px`,
+          top: `${Math.max(8, Math.min(window.innerHeight - 350, rect.bottom + 4))}px`,
           left: `${Math.max(8, rect.right - 244)}px`,
           width: '244px',
           maxHeight: '340px',
@@ -1058,6 +1129,17 @@
       }, 90);
     }
 
+    function localizeSameOriginWebviewChild() {
+      if (!isVscodeWebviewFrame) return;
+      try {
+        const sub = document.getElementById('active-frame');
+        const subBody = sub?.contentDocument?.body;
+        if (!subBody) return;
+        if (!enabled) restoreDom(subBody);
+        else walkAndLocalize(subBody);
+      } catch {}
+    }
+
     function mount() {
       syncCustomStyle(payload.customCss || '');
       if (!enabled && document.body) {
@@ -1065,6 +1147,7 @@
       } else if (enabled && document.body) {
         walkAndLocalize(document.body);
       }
+      localizeSameOriginWebviewChild();
       ensureAppearanceLanguageRow();
 
       if (document.body) {
@@ -1144,6 +1227,7 @@
       if (fullUninstall) {
         document.getElementById('agi18n-language-row')?.remove();
         document.getElementById('agi18n-ai-lang-row')?.remove();
+        document.getElementById('agi18n-ide-appearance-sec')?.remove();
         document.getElementById('agi18n-custom-css')?.remove();
         if (document.body) restoreDom(document.body);
       }

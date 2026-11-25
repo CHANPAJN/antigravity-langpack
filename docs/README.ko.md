@@ -2,8 +2,8 @@
 
 # antigravity-langpack
 
-Google Antigravity(`Stable` & `Insiders`) 순수 텍스트 네이티브 한글화 및 다국어 언어팩.  
-`app.asar` 무개조 · macOS 공식 서명 유지 · 15개 오프라인 사전(각 2,065개 항목, 마켓플레이스 전체 포함) 지원.
+**Google Antigravity 2.0(`Stable` & `Insiders`)** 및 **`Antigravity IDE`** 순수 텍스트 네이티브 한글화·다국어 언어팩.  
+단일 경량 데몬으로 IDE 호스트 언어팩 자동 동기화와 기본 언어팩이 지원하지 않는 **우측 Agent 패널 · Antigravity Settings · 인라인 버튼** 실시간 번역을 동시에 처리합니다 (`app.asar` 무개조 · macOS 공식 서명 유지 · 15개 오프라인 사전 각 2,110개 항목).
 
 <p>
   <a href="../README.md">English</a> ·

@@ -87,12 +87,16 @@ export function parsePosixHostProcessRow(row, platform = process.platform) {
 
   if (platform === 'darwin') {
     const macMatch = cmd.match(
-      /^(\S.*?\/Antigravity(?:\s-\sInsiders)?\.app)\/Contents\/MacOS\/(Antigravity(?:\s-\sInsiders)?)(?:\s|$)/
+      /^(\S.*?\/Antigravity(?:\s-\sInsiders|\sIDE)?\.app)\/Contents\/MacOS\/(Antigravity(?:\s-\sInsiders|\sIDE)?|Electron)(?:\s|$)/
     );
     if (!macMatch) return null;
     const appBundle = macMatch[1];
     const execName = macMatch[2];
-    const channel = /Insiders/i.test(execName) ? 'insiders' : 'stable';
+    const channel = /Antigravity\s+IDE\.app/i.test(appBundle)
+      ? 'ide'
+      : /Insiders/i.test(appBundle) || /Insiders/i.test(execName)
+        ? 'insiders'
+        : 'stable';
     return {
       pid,
       channel,
@@ -104,12 +108,13 @@ export function parsePosixHostProcessRow(row, platform = process.platform) {
     };
   }
 
-  const linuxMatch = cmd.match(/^(\/\S*\/antigravity(?:-insiders)?)(?:\s|$)/i);
+  const linuxMatch = cmd.match(/^(\/\S*\/antigravity(?:-insiders|-ide)?)(?:\s|$)/i);
   if (!linuxMatch) return null;
   const exePath = linuxMatch[1];
+  const channel = /antigravity-ide$/i.test(exePath) ? 'ide' : /insiders/i.test(exePath) ? 'insiders' : 'stable';
   return {
     pid,
-    channel: /insiders/i.test(exePath) ? 'insiders' : 'stable',
+    channel,
     appBundle: '',
     exePath,
     ageSec,
@@ -180,7 +185,12 @@ export function createRelaunchMonitor() {
         if (exemptPid && isProcessAlive(exemptPid)) continue;
         pendingImages.push({
           channel: chInfo.channel,
-          imageName: chInfo.channel === 'insiders' ? 'Antigravity - Insiders.exe' : 'Antigravity.exe'
+          imageName:
+            chInfo.channel === 'ide'
+              ? 'Antigravity IDE.exe'
+              : chInfo.channel === 'insiders'
+                ? 'Antigravity - Insiders.exe'
+                : 'Antigravity.exe'
         });
       }
       if (pendingImages.length === 0) return [];
@@ -208,7 +218,7 @@ export function createRelaunchMonitor() {
         `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8`,
         `$ErrorActionPreference = 'SilentlyContinue'`,
         `$now = [DateTime]::UtcNow`,
-        `$list = Get-CimInstance Win32_Process -Filter "Name='Antigravity.exe' OR Name='Antigravity - Insiders.exe'"`,
+        `$list = Get-CimInstance Win32_Process -Filter "Name='Antigravity.exe' OR Name='Antigravity - Insiders.exe' OR Name='Antigravity IDE.exe'"`,
         `$hosts = @(); $workers = @()`,
         `foreach ($p in $list) {`,
         `  $id = [int]$p.ProcessId`,
@@ -235,7 +245,12 @@ export function createRelaunchMonitor() {
         }
         const hosts = Array.isArray(parsed.hosts) ? parsed.hosts : parsed.hosts ? [parsed.hosts] : [];
         return hosts.map((h) => {
-          const ch = /insiders/i.test(h.name || h.exe || '') ? 'insiders' : 'stable';
+          const targetName = `${h.name || ''} ${h.exe || ''}`;
+          const ch = /antigravity\s+ide/i.test(targetName)
+            ? 'ide'
+            : /insiders/i.test(targetName)
+              ? 'insiders'
+              : 'stable';
           const cmd = String(h.cmd || '');
           const hasFlag = /--remote-debugging-port(?:=|\s|$)/i.test(cmd);
           if (hasFlag && Number(h.pid) > 0) nonHostPidCache.add(Number(h.pid));

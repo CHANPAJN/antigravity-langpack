@@ -16,7 +16,7 @@ import {
   writeConfigFile
 } from './paths.mjs';
 import { createRelaunchMonitor } from './relaunch.mjs';
-import { PID_LOCK_FILE, readDaemonPid, syncAgentLanguageRule } from './service.mjs';
+import { PID_LOCK_FILE, readDaemonPid, syncAgentLanguageRule, syncIdeDisplayLanguage } from './service.mjs';
 
 const SYNC_INTERVAL_MS = 4000;
 const DISCOVERY_INTERVAL_MS = 4000;
@@ -38,7 +38,13 @@ export async function fetchDevToolsPages(port) {
       const url = String(item.url || '');
       if (url.startsWith('devtools://') || url.startsWith('data:') || url.startsWith('about:')) return false;
       if (String(item.title || '').includes('Launchpad')) return false;
-      if (item.type === 'iframe') return url.startsWith('plugin://swarm--');
+      if (item.type === 'iframe') {
+        return (
+          url.startsWith('plugin://swarm--') ||
+          /^https?:\/\/(?:127\.0\.0\.1|localhost):\d+\//i.test(url) ||
+          url.startsWith('vscode-webview://')
+        );
+      }
       return item.type === 'page';
     });
   } catch {
@@ -195,7 +201,7 @@ function createPersistentSession(target, channelInfo, getScriptState, onLocaleRe
         await callCdp('Runtime.enable');
         if (!isWorkbench) {
           const check = await callCdp('Runtime.evaluate', {
-            expression: `Boolean(window.location?.protocol === 'vscode-file:' || /^https?:\\/\\/127\\.0\\.0\\.1:\\d+\\//.test(window.location?.href || '') || window.electronNative || document.querySelector('[id="antigravity.agentSidePanelInputBox"], body[data-agy-theme], body[data-newux-theme]'))`,
+            expression: `Boolean(window.location?.protocol === 'vscode-file:' || /^https?:\\/\\/(?:127\\.0\\.0\\.1|localhost):\\d+\\//i.test(window.location?.href || '') || window.electronNative || document.querySelector('[id="antigravity.agentSidePanelInputBox"], body[data-agy-theme], body[data-newux-theme]'))`,
             returnByValue: true
           });
           isWorkbench = check?.result?.result?.value === true;
@@ -311,6 +317,7 @@ export async function runDaemonLoop({ once = false } = {}) {
           updatedCfg = writeConfigFile({ syncAiOutputLang: targetAction.endsWith(':on') });
         } else {
           updatedCfg = writeConfigFile({ locale: targetAction });
+          syncIdeDisplayLanguage(updatedCfg.locale, { background: true });
         }
         syncAgentLanguageRule(updatedCfg.locale, updatedCfg.syncAiOutputLang === true);
         builder.refreshIfNeeded();

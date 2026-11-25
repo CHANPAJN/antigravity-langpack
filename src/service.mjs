@@ -4,9 +4,231 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
-import { PROJECT_ROOT } from './paths.mjs';
+import { PROJECT_ROOT, resolveChannelInfo } from './paths.mjs';
 import { normalizeLocaleCode } from './locales.mjs';
+
+export const IDE_VSCODE_LANGPACK_MAP = Object.freeze({
+  'zh-CN': { extId: 'MS-CEINTL.vscode-language-pack-zh-hans', vscodeLocale: 'zh-cn' },
+  'zh-SG': { extId: 'MS-CEINTL.vscode-language-pack-zh-hans', vscodeLocale: 'zh-cn' },
+  'zh-TW': { extId: 'MS-CEINTL.vscode-language-pack-zh-hant', vscodeLocale: 'zh-tw' },
+  ja: { extId: 'MS-CEINTL.vscode-language-pack-ja', vscodeLocale: 'ja' },
+  ko: { extId: 'MS-CEINTL.vscode-language-pack-ko', vscodeLocale: 'ko' },
+  ru: { extId: 'MS-CEINTL.vscode-language-pack-ru', vscodeLocale: 'ru' },
+  id: { extId: 'MS-CEINTL.vscode-language-pack-id', vscodeLocale: 'id' },
+  es: { extId: 'MS-CEINTL.vscode-language-pack-es', vscodeLocale: 'es' },
+  fr: { extId: 'MS-CEINTL.vscode-language-pack-fr', vscodeLocale: 'fr' },
+  de: { extId: 'MS-CEINTL.vscode-language-pack-de', vscodeLocale: 'de' },
+  pt: { extId: 'MS-CEINTL.vscode-language-pack-pt-br', vscodeLocale: 'pt-br' },
+  it: { extId: 'MS-CEINTL.vscode-language-pack-it', vscodeLocale: 'it' }
+});
+
+export function patchVscodeArgvJsonc(rawText, vscodeLocale = 'zh-cn') {
+  const safeLoc = String(vscodeLocale || 'en').trim() || 'en';
+  const trimmed = String(rawText ?? '').trim();
+  if (!trimmed) {
+    return `{\n\t"locale": "${safeLoc}"\n}\n`;
+  }
+  const reExisting = /^(\s*"locale"\s*:\s*)"[^"]*"(.*)$/m;
+  if (reExisting.test(rawText)) {
+    return rawText.replace(reExisting, `$1"${safeLoc}"$2`);
+  }
+  const lastBrace = rawText.lastIndexOf('}');
+  if (lastBrace === -1) {
+    return `{\n\t"locale": "${safeLoc}"\n}\n`;
+  }
+  const before = rawText.slice(0, lastBrace);
+  const after = rawText.slice(lastBrace);
+  const lines = before.split(/\r?\n/);
+  let lastCodeIdx = -1;
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const clean = lines[i].replace(/\/\/.*$/, '').trim();
+    if (clean) {
+      lastCodeIdx = i;
+      break;
+    }
+  }
+  if (lastCodeIdx >= 0) {
+    const codeLine = lines[lastCodeIdx].replace(/\/\/.*$/, '').trimEnd();
+    if (!codeLine.endsWith('{') && !codeLine.endsWith(',')) {
+      const commentMatch = lines[lastCodeIdx].match(/^(\s*.*?[^\s,])(\s*(?:\/\/.*)?)$/);
+      if (commentMatch) {
+        lines[lastCodeIdx] = `${commentMatch[1]},${commentMatch[2]}`;
+      } else {
+        lines[lastCodeIdx] = `${lines[lastCodeIdx]},`;
+      }
+    }
+  }
+  return `${lines.join('\n')}\n\t"locale": "${safeLoc}"\n${after}`;
+}
+
+export function findInstalledExtensionDir(extensionsDir, extId) {
+  if (!extensionsDir || !extId || !fs.existsSync(extensionsDir)) return '';
+  const prefix = `${String(extId).toLowerCase()}-`;
+  try {
+    const matches = fs
+      .readdirSync(extensionsDir)
+      .filter((entry) => entry.toLowerCase().startsWith(prefix))
+      .sort();
+    if (matches.length > 0) {
+      return path.join(extensionsDir, matches[matches.length - 1]);
+    }
+  } catch {}
+  return '';
+}
+
+export function isVscodeExtensionInstalled(extensionsDir, extId) {
+  return Boolean(findInstalledExtensionDir(extensionsDir, extId));
+}
+
+export function ensureIdeLanguagePacksRegistry(userDataDir, extensionsDir, extId) {
+  const extDir = findInstalledExtensionDir(extensionsDir, extId);
+  if (!userDataDir || !extDir) return false;
+  const pkgPath = path.join(extDir, 'package.json');
+  if (!fs.existsSync(pkgPath)) return false;
+
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    const localizations = pkg?.contributes?.localizations;
+    if (!Array.isArray(localizations) || localizations.length === 0) return false;
+
+    const lpPath = path.join(userDataDir, 'languagepacks.json');
+    let registry = {};
+    if (fs.existsSync(lpPath)) {
+      try {
+        const parsed = JSON.parse(fs.readFileSync(lpPath, 'utf8'));
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) registry = parsed;
+      } catch {}
+    }
+
+    const fullId = `${String(pkg.publisher || '').toLowerCase()}.${String(pkg.name || '').toLowerCase()}`;
+    const version = String(pkg.version || '1.0.0');
+    const hash = crypto.createHash('md5').update(`${fullId}@${version}`).digest('hex');
+    let changed = false;
+
+    for (const loc of localizations) {
+      const langId = String(loc?.languageId || '').toLowerCase();
+      if (!langId || !Array.isArray(loc.translations)) continue;
+      const translations = {};
+      for (const item of loc.translations) {
+        if (!item?.id || !item?.path) continue;
+        translations[item.id] = path.resolve(extDir, item.path);
+      }
+      if (!translations.vscode || !fs.existsSync(translations.vscode)) continue;
+
+      const existing = registry[langId];
+      if (!existing || existing.hash !== hash || existing.translations?.vscode !== translations.vscode) {
+        registry[langId] = {
+          hash,
+          extensions: [
+            {
+              extensionIdentifier: { id: fullId },
+              version
+            }
+          ],
+          translations,
+          label: loc.localizedLanguageName || loc.languageName || langId
+        };
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      fs.mkdirSync(userDataDir, { recursive: true });
+      fs.writeFileSync(lpPath, JSON.stringify(registry, null, '\t'), 'utf8');
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function syncIdeDisplayLanguage(
+  localeCode = 'zh-CN',
+  { customHome = '', skipExtensionInstall = false, background = false } = {}
+) {
+  const ideInfo = resolveChannelInfo('ide', { customHome });
+  if (!ideInfo.installed || !ideInfo.argvPath) {
+    return { installed: false, synced: false };
+  }
+  const norm = normalizeLocaleCode(localeCode);
+  const spec = norm === 'en' ? null : IDE_VSCODE_LANGPACK_MAP[norm] || null;
+  const targetVscodeLocale = spec ? spec.vscodeLocale : 'en';
+
+  let argvUpdated = false;
+  try {
+    fs.mkdirSync(path.dirname(ideInfo.argvPath), { recursive: true });
+    const prev = fs.existsSync(ideInfo.argvPath) ? fs.readFileSync(ideInfo.argvPath, 'utf8') : '';
+    const existingMatch = prev.match(/^\s*"locale"\s*:\s*"([^"]*)"/m);
+    const existingLoc = existingMatch ? existingMatch[1].trim().toLowerCase() : '';
+    const keepUserCustomPack =
+      !spec && norm !== 'en' && (existingLoc === norm.toLowerCase() || existingLoc.startsWith(`${norm.toLowerCase()}-`));
+    if (!keepUserCustomPack) {
+      const next = patchVscodeArgvJsonc(prev, targetVscodeLocale);
+      if (next !== prev) {
+        fs.writeFileSync(ideInfo.argvPath, next, 'utf8');
+        argvUpdated = true;
+      }
+    }
+  } catch {}
+
+  let extensionInstalled = spec ? isVscodeExtensionInstalled(ideInfo.extensionsDir, spec.extId) : true;
+  if (spec && !extensionInstalled && !skipExtensionInstall && ideInfo.cliPath) {
+    if (background) {
+      try {
+        const child =
+          process.platform === 'win32'
+            ? spawn(
+                process.env.ComSpec || 'cmd.exe',
+                ['/d', '/s', '/c', `""${ideInfo.cliPath}" --install-extension ${spec.extId}"`],
+                {
+                  detached: true,
+                  stdio: 'ignore',
+                  windowsHide: true,
+                  windowsVerbatimArguments: true
+                }
+              )
+            : spawn(ideInfo.cliPath, ['--install-extension', spec.extId], {
+                detached: true,
+                stdio: 'ignore'
+              });
+        child.unref();
+      } catch {}
+    } else {
+      try {
+        const run =
+          process.platform === 'win32'
+            ? spawnSync(
+                process.env.ComSpec || 'cmd.exe',
+                ['/d', '/s', '/c', `""${ideInfo.cliPath}" --install-extension ${spec.extId}"`],
+                { windowsHide: true, windowsVerbatimArguments: true, encoding: 'utf8', timeout: 60000 }
+              )
+            : spawnSync(ideInfo.cliPath, ['--install-extension', spec.extId], {
+                encoding: 'utf8',
+                timeout: 60000
+              });
+        extensionInstalled = run.status === 0 || isVscodeExtensionInstalled(ideInfo.extensionsDir, spec.extId);
+      } catch {}
+    }
+  }
+
+  const registryReady =
+    spec && extensionInstalled
+      ? ensureIdeLanguagePacksRegistry(ideInfo.userDataDir, ideInfo.extensionsDir, spec.extId)
+      : false;
+
+  return {
+    installed: true,
+    synced: true,
+    vscodeLocale: targetVscodeLocale,
+    extensionId: spec ? spec.extId : '',
+    extensionInstalled,
+    registryReady,
+    argvUpdated,
+    argvPath: ideInfo.argvPath
+  };
+}
 
 export const PID_LOCK_FILE = path.join(os.tmpdir(), 'antigravity-langpack-daemon.pid');
 export const MAC_PLIST_LABEL = 'io.github.antigravity-langpack.daemon';
@@ -156,7 +378,8 @@ export function installMacShellLaunchers(channels = [], targetAppsDir = path.joi
   fs.mkdirSync(targetAppsDir, { recursive: true });
 
   for (const ch of channels) {
-    const appName = ch.channel === 'insiders' ? 'Antigravity - Insiders' : 'Antigravity';
+    const appName =
+      ch.channel === 'ide' ? 'Antigravity IDE' : ch.channel === 'insiders' ? 'Antigravity - Insiders' : 'Antigravity';
     const sourceBundle = ch.appBundle || `/Applications/${appName}.app`;
     const wrapperName = `${appName} (i18n).app`;
     const wrapperDir = path.join(targetAppsDir, wrapperName);
@@ -179,9 +402,11 @@ export function installMacShellLaunchers(channels = [], targetAppsDir = path.joi
     } catch {}
 
     const bundleId =
-      ch.channel === 'insiders'
-        ? 'io.github.antigravity-langpack.launcher.insiders'
-        : 'io.github.antigravity-langpack.launcher.stable';
+      ch.channel === 'ide'
+        ? 'io.github.antigravity-langpack.launcher.ide'
+        : ch.channel === 'insiders'
+          ? 'io.github.antigravity-langpack.launcher.insiders'
+          : 'io.github.antigravity-langpack.launcher.stable';
 
     const infoPlist =
       [
@@ -203,7 +428,7 @@ export function installMacShellLaunchers(channels = [], targetAppsDir = path.joi
 }
 
 export function removeMacShellLaunchers(targetAppsDir = path.join(os.homedir(), 'Applications')) {
-  for (const name of ['Antigravity (i18n).app', 'Antigravity - Insiders (i18n).app']) {
+  for (const name of ['Antigravity (i18n).app', 'Antigravity - Insiders (i18n).app', 'Antigravity IDE (i18n).app']) {
     const p = path.join(targetAppsDir, name);
     try {
       if (fs.existsSync(p)) fs.rmSync(p, { recursive: true, force: true });

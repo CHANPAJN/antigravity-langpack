@@ -1,7 +1,7 @@
 {
   "name": "antigravity-langpack",
-  "version": "1.6.0",
-  "description": "Zero-binary, zero-dependency multi-language UI pack (14 languages / 15 locales, 2,065 entries each, full Marketplace coverage & opt-in AI thinking language sync) for Google Antigravity on Windows, macOS & Linux.",
+  "version": "1.7.0",
+  "description": "Zero-binary, zero-dependency multi-language UI pack (15 locales x 2,110 entries, full Marketplace coverage & opt-in AI language sync) for Google Antigravity 2.0 (Stable & Insiders) and Antigravity IDE on Windows, macOS & Linux.",
   "type": "module",
   "license": "GPL-3.0-only",
   "engines": {
@@ -23,11 +23,13 @@
   },
   "keywords": [
     "antigravity",
+    "antigravity-ide",
     "insiders",
     "i18n",
     "localization",
     "macos",
     "windows",
+    "linux",
     "zh-cn",
     "zh-tw",
     "japanese",
