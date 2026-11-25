@@ -1,7 +1,7 @@
 {
   "name": "antigravity-langpack",
-  "version": "1.4.0",
-  "description": "Zero-binary, zero-dependency multi-language UI pack (13 languages / 14 locales) & optional AI dictionary sync for Google Antigravity on Windows, macOS & Linux.",
+  "version": "1.6.0",
+  "description": "Zero-binary, zero-dependency multi-language UI pack (14 languages / 15 locales, 2,065 entries each, full Marketplace coverage & opt-in AI thinking language sync) for Google Antigravity on Windows, macOS & Linux.",
   "type": "module",
   "license": "GPL-3.0-only",
   "engines": {
@@ -17,6 +17,7 @@
     "uninstall-i18n": "node --disable-warning=ExperimentalWarning cli.mjs uninstall",
     "status": "node --disable-warning=ExperimentalWarning cli.mjs status",
     "lang": "node --disable-warning=ExperimentalWarning cli.mjs lang",
+    "ai-lang": "node --disable-warning=ExperimentalWarning cli.mjs ai-lang",
     "collect": "node --disable-warning=ExperimentalWarning cli.mjs collect",
     "sync-ai": "node --disable-warning=ExperimentalWarning cli.mjs sync-ai"
   },
@@ -31,6 +32,7 @@
     "zh-tw",
     "japanese",
     "korean",
+    "russian",
     "vietnamese",
     "hindi",
     "indonesian",

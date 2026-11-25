@@ -19,7 +19,13 @@ import {
   writeConfigFile
 } from '../src/paths.mjs';
 import { parsePosixElapsedSeconds, parsePosixHostProcessRow } from '../src/relaunch.mjs';
-import { configureAutostart, installMacShellLaunchers, removeMacShellLaunchers } from '../src/service.mjs';
+import {
+  AI_LANG_RULE_FILENAME,
+  configureAutostart,
+  installMacShellLaunchers,
+  removeMacShellLaunchers,
+  syncAgentLanguageRule
+} from '../src/service.mjs';
 import { runRepoSelfCheck, saveLearnedTranslations, validateAndFilterTranslations } from '../cli.mjs';
 
 test('Repository contains zero binary files (.exe/.dll/.node) and all scripts/JSON pass syntax check', () => {
@@ -50,10 +56,10 @@ test('Base Simplified Chinese dictionary has clean terminology and zero legacy t
   assert.equal(/您|工件|子代理|旁路提问|支线提问|沙盒|点数|账户|键入|蜂群|侧车|发起自主对话/.test(allValues), false);
 });
 
-test('All 14 supported locales have full dictionaries and prompt specs', () => {
-  assert.equal(Object.keys(SUPPORTED_LOCALES).length, 14);
+test('All 15 supported locales have full dictionaries and prompt specs', () => {
+  assert.equal(Object.keys(SUPPORTED_LOCALES).length, 15);
   const zhKeys = Object.keys(loadMergedDictionary('zh-CN').merged);
-  assert.ok(zhKeys.length >= 1910, `Expected >= 1910 zh-CN keys, got ${zhKeys.length}`);
+  assert.ok(zhKeys.length >= 2060, `Expected >= 2060 zh-CN keys, got ${zhKeys.length}`);
 
   for (const code of Object.keys(SUPPORTED_LOCALES)) {
     const lf = resolveLocaleFiles(code);
@@ -120,8 +126,19 @@ test('Multi-script validator handles CJK/Kana/Hangul/Thai/Devanagari & Latin (vi
     }
   };
   const resEs = validateAndFilterTranslations(euSample, 'es');
-  assert.equal(Object.keys(resEs.accepted).length, 3);
+  assert.equal(resEs.accepted && Object.keys(resEs.accepted).length, 3);
   assert.equal(resEs.rejected.length, 1);
+
+  const ruSample = {
+    translations: {
+      Settings: 'Настройки',
+      Appearance: 'Внешний вид',
+      EnglishOnly: 'Settings'
+    }
+  };
+  const resRu = validateAndFilterTranslations(ruSample, 'ru');
+  assert.deepEqual(resRu.accepted, { Settings: 'Настройки', Appearance: 'Внешний вид' });
+  assert.equal(resRu.rejected.length, 1);
 });
 
 test('macOS & Linux BSD ps etime parser and spaced .app bundle path parser work accurately', () => {
@@ -198,7 +215,7 @@ test('macOS LaunchAgent plist & pure-shell .app Dock wrapper generate cleanly (v
 });
 
 test('Per-locale learned dictionary writes strictly to dict/learned.<locale>.json and supports English reset', () => {
-  assert.equal(LOCALE_MENU_OPTIONS.length, 15);
+  assert.equal(LOCALE_MENU_OPTIONS.length, 16);
   const jaLearned = resolveLocaleFiles('ja').learnedDict;
   const backupJa = fs.existsSync(jaLearned) ? fs.readFileSync(jaLearned, 'utf8') : '';
   const hadConfig = fs.existsSync(FILES.config);
@@ -365,7 +382,7 @@ test('English mode (enabled: false) mounts MutationObserver without WHATWG attri
     Map,
     requestAnimationFrame: (fn) => {
       fn();
-      return 1;
+      return 0;
     },
     cancelAnimationFrame: () => {},
     setTimeout: () => 1,
@@ -423,4 +440,197 @@ test('Security & transparency gates: GPL-3.0 license, default-off telemetry/AI s
   const cliSrc = fs.readFileSync(path.join(PROJECT_ROOT, 'cli.mjs'), 'utf8');
   assert.ok(cliSrc.includes("'--mode', 'plan', '--sandbox'"), 'sync-ai must enforce plan mode and sandbox isolation');
   assert.ok(cliSrc.includes("args.includes('--with-skill')"), 'SKILL.md installation must be strictly opt-in');
+});
+
+test('Chinese Insiders dynamic patterns, multi-word case fallback & React text-node reuse cleanup work accurately', async () => {
+  const vm = await import('node:vm');
+  const { getLocaleSpec } = await import('../src/locales.mjs');
+  const injectorSrc = fs.readFileSync(path.join(PROJECT_ROOT, 'src', 'injector.js'), 'utf8');
+
+  let observerCb = null;
+  class MockObserver {
+    constructor(cb) {
+      observerCb = cb;
+    }
+    observe() {}
+    disconnect() {}
+  }
+
+  const textNode = {
+    nodeType: 3,
+    isConnected: true,
+    nodeValue: 'Thinking',
+    parentElement: { nodeType: 1, tagName: 'SPAN', isConnected: true, closest: () => null }
+  };
+  const btnEl = {
+    nodeType: 1,
+    tagName: 'BUTTON',
+    isConnected: true,
+    attrs: new Map([
+      ['aria-label', 'toggle sidebar'],
+      ['title', 'Shortcut Ctrl+N for New Conversation']
+    ]),
+    getAttribute(k) {
+      return this.attrs.has(k) ? this.attrs.get(k) : null;
+    },
+    setAttribute(k, v) {
+      this.attrs.set(k, String(v));
+    },
+    removeAttribute(k) {
+      this.attrs.delete(k);
+    },
+    closest() {
+      return null;
+    }
+  };
+  const tokenNode = { nodeType: 3, nodeValue: 'Mcp Tools: 1,568 tokens', parentElement: btnEl };
+  const breakdownNode = { nodeType: 3, nodeValue: 'Show 31 breakdowns', parentElement: btnEl };
+  const lockedEl = {
+    nodeType: 1,
+    tagName: 'BUTTON',
+    isConnected: true,
+    attrs: new Map([['aria-label', 'Model: Gemini 4 Carbon High, Model cannot be changed while the agent is running']]),
+    getAttribute(k) {
+      return this.attrs.has(k) ? this.attrs.get(k) : null;
+    },
+    setAttribute(k, v) {
+      this.attrs.set(k, String(v));
+    },
+    removeAttribute(k) {
+      this.attrs.delete(k);
+    },
+    closest() {
+      return null;
+    }
+  };
+
+  const allNodes = [btnEl, lockedEl, textNode, tokenNode, breakdownNode];
+  const fakeBody = {
+    nodeType: 1,
+    tagName: 'BODY',
+    isConnected: true,
+    closest: () => null,
+    getAttribute: () => null,
+    setAttribute: () => {},
+    removeAttribute: () => {},
+    querySelectorAll: () => []
+  };
+
+  const sandbox = {
+    window: null,
+    document: {
+      hidden: false,
+      title: 'Antigravity Insiders',
+      body: fakeBody,
+      head: fakeBody,
+      getElementById: () => null,
+      querySelectorAll: () => [],
+      createTreeWalker: (_root, _what, filter) => {
+        let idx = 0;
+        return {
+          currentNode: null,
+          nextNode() {
+            while (idx < allNodes.length) {
+              const candidate = allNodes[idx++];
+              const verdict = filter && typeof filter.acceptNode === 'function' ? filter.acceptNode(candidate) : 1;
+              if (verdict === 1) {
+                this.currentNode = candidate;
+                return candidate;
+              }
+            }
+            return null;
+          }
+        };
+      },
+      addEventListener() {},
+      removeEventListener() {}
+    },
+    NodeFilter: { SHOW_TEXT: 4, SHOW_ELEMENT: 1, FILTER_ACCEPT: 1, FILTER_REJECT: 2, FILTER_SKIP: 3 },
+    MutationObserver: MockObserver,
+    WeakMap,
+    Set,
+    Map,
+    requestAnimationFrame: (fn) => {
+      fn();
+      return 0;
+    },
+    cancelAnimationFrame: () => {},
+    setTimeout: () => 1,
+    clearTimeout: () => {}
+  };
+  sandbox.window = sandbox;
+  sandbox.window.top = sandbox.window;
+  sandbox.window.location = { protocol: 'https:', href: 'https://127.0.0.1:59678/' };
+
+  vm.runInNewContext(injectorSrc, sandbox);
+  const sgSpec = getLocaleSpec('zh-SG');
+  const sgDict = loadMergedDictionary('zh-SG').merged;
+
+  sandbox.window.__AGI18N_BOOT__({
+    buildId: 'agi18n-zh-SG-test',
+    locale: 'zh-SG',
+    enabled: true,
+    collectUntranslated: true,
+    localeOptions: LOCALE_MENU_OPTIONS,
+    contextOverrides: sgSpec.contextOverrides,
+    patterns: sgSpec.patterns,
+    dict: sgDict
+  });
+
+  assert.equal(textNode.nodeValue, '正在思考');
+  assert.equal(tokenNode.nodeValue, 'MCP 工具：1,568 Token');
+  assert.equal(breakdownNode.nodeValue, '展开 31 项明细');
+  assert.equal(btnEl.getAttribute('aria-label'), '切换侧边栏');
+  assert.equal(btnEl.getAttribute('title'), '「新建对话」的快捷键：Ctrl+N');
+  assert.equal(lockedEl.getAttribute('aria-label'), '模型：Gemini 4 Carbon High（Agent 运行期间无法切换模型）');
+
+  // Simulate React reusing textNode for an untranslated dynamic string vs Running task
+  textNode.nodeValue = 'Running 检查预览版状态';
+  observerCb([{ type: 'characterData', target: textNode }]);
+  assert.equal(textNode.nodeValue, '正在运行：检查预览版状态');
+
+  // Simulate dynamic home greeting & marketplace action rules
+  textNode.nodeValue = 'Hi Alex, what can we get done today?';
+  observerCb([{ type: 'characterData', target: textNode }]);
+  assert.equal(textNode.nodeValue, '嗨，Alex，今天想推进点什么？');
+
+  textNode.nodeValue = 'Install GitHub';
+  observerCb([{ type: 'characterData', target: textNode }]);
+  assert.equal(textNode.nodeValue, '安装 GitHub');
+
+  // Simulate React reusing textNode for an untranslated plain string -> textOrigMap must be cleared
+  textNode.nodeValue = 'Completely Unknown Custom Phrase';
+  observerCb([{ type: 'characterData', target: textNode }]);
+  assert.equal(sandbox.window.__AGI18N_RUNTIME__.textOrigMap.has(textNode), false);
+});
+
+test('Opt-in AI thinking/reply language sync defaults to false, switches cleanly, and preserves user rules', () => {
+  assert.equal(DEFAULT_CONFIG.syncAiOutputLang, false);
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'agi18n-airule-'));
+  try {
+    const rulesDir = path.join(tmpHome, '.gemini', 'config', 'rules');
+    fs.mkdirSync(rulesDir, { recursive: true });
+    const userRule = path.join(rulesDir, '01_user_custom.md');
+    fs.writeFileSync(userRule, '# User Custom Rule\n', 'utf8');
+
+    // Default off -> writes nothing
+    assert.equal(syncAgentLanguageRule('ja', false, { customHome: tmpHome }), '');
+    assert.equal(fs.existsSync(path.join(rulesDir, AI_LANG_RULE_FILENAME)), false);
+
+    // Enabled for Japanese -> writes Japanese rule
+    const jaPath = syncAgentLanguageRule('ja', true, { customHome: tmpHome });
+    assert.ok(jaPath.endsWith(AI_LANG_RULE_FILENAME));
+    assert.ok(fs.readFileSync(jaPath, 'utf8').includes('日本語'));
+
+    // Switch to Russian -> updates rule in place
+    syncAgentLanguageRule('ru', true, { customHome: tmpHome });
+    assert.ok(fs.readFileSync(jaPath, 'utf8').includes('русском языке'));
+
+    // Switch to English or turn off -> removes managed rule while preserving user rule
+    assert.equal(syncAgentLanguageRule('en', true, { customHome: tmpHome }), '');
+    assert.equal(fs.existsSync(jaPath), false);
+    assert.equal(fs.existsSync(userRule), true);
+  } finally {
+    fs.rmSync(tmpHome, { recursive: true, force: true });
+  }
 });

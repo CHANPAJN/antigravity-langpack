@@ -29,7 +29,8 @@ export const DEFAULT_CONFIG = Object.freeze({
   autoRelaunchCdp: true,
   enableCustomCss: true,
   collectUntranslated: false,
-  autoSyncAi: false
+  autoSyncAi: false,
+  syncAiOutputLang: false
 });
 
 export function resolveLocaleFiles(localeCode = 'zh-CN') {
@@ -236,7 +237,8 @@ export function createPayloadBuilder() {
       autoRelaunchCdp: rawCfg.autoRelaunchCdp !== false,
       enableCustomCss: rawCfg.enableCustomCss !== false,
       collectUntranslated: rawCfg.collectUntranslated === true,
-      autoSyncAi: rawCfg.autoSyncAi === true
+      autoSyncAi: rawCfg.autoSyncAi === true,
+      syncAiOutputLang: rawCfg.syncAiOutputLang === true
     };
 
     const { merged } = loadMergedDictionary(locale);
@@ -258,6 +260,7 @@ export function createPayloadBuilder() {
       buildId,
       locale: enabled ? locale : 'en',
       enabled,
+      syncAiOutputLang: config.syncAiOutputLang,
       collectUntranslated: config.collectUntranslated,
       customCss,
       localeOptions: LOCALE_MENU_OPTIONS,

@@ -2,67 +2,78 @@
 
 # antigravity-langpack
 
-**純明文零二進位檔、免改 `app.asar` 的 Google Antigravity 多語系原生介面語言包（涵蓋 13 種語言 / 14 套詞庫，支援 macOS / Windows / Linux，相容 Stable 正式版與 Insiders 預覽版）。**
+Google Antigravity（`Stable` & `Insiders`）純文字原生多語系介面包。  
+基於本機 CDP 事件流掛載，免改 `app.asar`、保留 macOS 官方公證簽章，內建 15 套離線詞庫（每套 2,065 條）。
 
 <p>
   <a href="../README.md">English</a> ·
   <a href="./README.zh-CN.md">简体中文</a> ·
   <b>繁體中文</b> ·
   <a href="./README.ja.md">日本語</a> ·
-  <a href="./README.ko.md">한국어</a>
+  <a href="./README.ko.md">한국어</a> ·
+  <a href="./README.ru.md">Русский</a>
 </p>
 
-<p align="center">
-  <img src="./demo.gif" width="840" alt="antigravity-langpack Native Display Language Switcher Demo" />
-</p>
+<img src="./demo.gif" width="840" alt="antigravity-langpack Appearance Switcher" />
 
 </div>
 
----
+## 介面預覽（工作區 · 外掛市集完整中文化 · 15 國詞庫）
 
-## 核心特點
+<p align="center">
+  <img src="./assets/bento-zh-TW.png" width="880" alt="主工作區、外掛市集與外觀控制項預覽" />
+</p>
 
-1. **原生「設定 → 外觀」下拉選單即時切換（免重啟）**：
-   於應用程式內建 `設定 → 外觀` 頂部自動嵌入與官方元件一致的 **「介面語言」** 選單，免重啟視窗即可即時切換 **13 種語言（14 套詞庫）或原版英文**，對齊 VS Code 繁體中文標準術語（`程式碼 / 檔案 / 資料夾 / 專案 / 預設 / 快取 / 剪貼簿`）。
-2. **不修改 `app.asar`，macOS 免破簽章、常規自動更新免重打修補程式**：
-   100% 保留 Google 官方 Apple 公證簽章，不觸發 Gatekeeper「應用程式已損毀」警告或反覆跳出鑰匙圈密碼視窗；常規自動更新後無須重新打修補程式。
-3. **零 `.exe` 二進位檔、零第三方相依套件、免管理員權限**：
-   全專案僅使用官方 `Node.js >= 22.13` 原生 API，所有程式碼透明可審計，無須管理員或 `sudo` 權限即可完成安裝。
-4. **完整預載詞庫 + 按需唯讀沙箱補詞（預設關閉背景收集）**：
-   每套詞庫均內建 **1,920 條** 完整詞條，預設關閉未翻譯字串收集與背景 AI 呼叫；當未來新版本出現未翻譯按鈕時，可手動執行 `node cli.mjs sync-ai` 於唯讀沙箱模式補齊至 `dict/learned.zh-TW.json`。
+<p align="center">
+  <img src="./assets/locales-gallery.png" width="880" alt="15 套離線詞庫預覽" />
+</p>
 
----
+## 安裝
 
-## 快速安裝
+無須管理員或 `sudo` 權限。若本機未安裝 `Node.js >= 22.13`，安裝腳本會自動下載經官方 `SHASUMS256.txt` 驗證之獨立執行環境至私有 `.runtime/` 目錄。
+
+```bash
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/CHANPAJN/antigravity-langpack/main/install.sh | sh -s -- --lang zh-TW
+```
+
+```powershell
+# Windows (PowerShell)
+$env:AGY_LANG='zh-TW'; irm https://raw.githubusercontent.com/CHANPAJN/antigravity-langpack/main/install.ps1 | iex
+```
+
+**AI 對話一鍵安裝**（貼入 Antigravity / Claude Code / Cursor，詳見 [AI_INSTALL.md](../AI_INSTALL.md)）
+
+```text
+請閱讀 https://github.com/CHANPAJN/antigravity-langpack/blob/main/AI_INSTALL.md 並幫我安裝啟用 Antigravity 繁體中文語言包（zh-TW）。
+```
+
+**原始碼安裝**
 
 ```bash
 git clone https://github.com/CHANPAJN/antigravity-langpack.git
 cd antigravity-langpack
-
-# 以繁體中文安裝啟動
 node cli.mjs install --lang zh-TW
-
-# 選用：macOS 產生純 Shell 指令碼 Dock 免重啟啟動器
-node cli.mjs install --lang zh-TW --mac-launcher
-
-# 選用：開啟新版本未翻譯按鈕背景自動補詞（或隨時執行 `node cli.mjs auto-sync on/off` 切換）
-node cli.mjs install --lang zh-TW --auto-sync
-
-# 選用：顯式安裝對話觸發技能至 ~/.gemini/config/skills/
-node cli.mjs install --lang zh-TW --with-skill
 ```
 
-解除安裝並還原英文原版介面：`node cli.mjs uninstall`。
+## 使用與指令
 
----
+開啟 **`設定 (Settings) → 外觀 (Appearance)`** 即可免重啟即時切換 **「介面語言」**，並可按需開啟 **「同步 AI 思考與回覆語言」**（預設關閉）。
 
-## 運作機制與透明說明
+```bash
+node cli.mjs status          # 檢視背景服務與連線埠狀態
+node cli.mjs lang zh-TW      # 即時切換語言（傳入 en 還原英文）
+node cli.mjs ai-lang on      # 選用：同步 AI 思考與回覆語言（off 關閉）
+node cli.mjs sync-ai         # 按需於唯讀沙箱掃描並補齊新版未翻譯字串
+node cli.mjs uninstall       # 解除安裝並還原原版英文介面
+```
 
-- **冷啟動除錯埠補參（`autoRelaunchCdp: true`）**：若未帶 `--remote-debugging-port=0` 啟動，背景服務**僅針對剛啟動 `<15s` 且無近期對話寫入的新處理程序**發送溫和關閉請求（絕不使用 `-Force` / `SIGKILL` 強制終止；若視窗拒絕關閉則立即豁免放行）並附帶參數重開一次。可於 `dict/config.json` 設定 `"autoRelaunchCdp": false` 停用。
-- **選擇器邊界與隱私預設值**：已連線視窗採 WebSocket 事件驅動（搭配 4 秒本機埠檢查）；預設不收集未翻譯文字、不自動呼叫 AI、亦不修改 `~/.gemini/config/skills/`。若未來上游大幅改版重構設定視窗 DOM 結構，則需更新選擇器。
+## 架構與隱私邊界
 
----
+- **零修改掛載**：透過 `127.0.0.1` 單一持久化 CDP WebSocket 事件驅動（閒置 CPU 約 `0.0%`），不修改 `app.asar` 與安裝目錄，常規更新免重打修補程式。
+- **DOM 隔離與無損還原**：嚴格略過程式碼編輯器、終端機與對話內容，以 `WeakMap` 實現免重啟即時切換與還原。
+- **預設全關**：`collectUntranslated`、`autoSyncAi`、`syncAiOutputLang` 預設皆為 `false`，不擅自改動 `~/.gemini/config/`；冷啟動除錯埠補參（`autoRelaunchCdp`）僅對剛啟動 `<15s` 且無近期寫入之新處理程序發送溫和關閉請求（絕不使用強制終止）。
 
 ## 授權條款
 
-採用 OSI 認證之 [GNU General Public License v3.0 (GPL-3.0)](../LICENSE) 開源授權條款。
+採用 [GNU General Public License v3.0 (GPL-3.0)](../LICENSE) 開源授權條款。

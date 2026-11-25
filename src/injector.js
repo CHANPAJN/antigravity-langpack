@@ -67,18 +67,31 @@
     'HTML',
     'JSON',
     'Markdown',
-    'Worktree'
+    'Worktree',
+    'Ctrl',
+    'Alt',
+    'Shift',
+    'Cmd',
+    'Enter',
+    'Ctrl+Enter',
+    'Cmd+Enter',
+    'Shift+Enter',
+    'Tari',
+    'Nord',
+    'Google Sans',
+    'Google AI Ultra',
+    'Google AI Pro'
   ]);
 
   const PROTECTED_ARIA_LABELS = new Set(['Cancel']);
 
-  const RE_LOCALIZED_SCRIPT = /[\u00c0-\u024f\u0900-\u097f\u0e00-\u0e7f\u1e00-\u1eff\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/;
+  const RE_LOCALIZED_SCRIPT = /[\u00c0-\u024f\u0400-\u04ff\u0900-\u097f\u0e00-\u0e7f\u1e00-\u1eff\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/;
   const RE_ALPHA = /[A-Za-z]/;
   const RE_PURE_ASCII_WORDS = /^\s*[A-Za-z][A-Za-z\s]*\s*$/;
   const RE_CANDIDATE_SKIP =
-    /^(?:https?:\/\/|file:\/\/|vscode-file:\/\/|sidecar:\/\/|[A-Za-z]:\\|\/[\w.-]+\/|~\/|[@#-][\w.-]+|\S+@\S+\.\S+|\d+(?:\.\d+)*%?|[0-9a-f]{8}-[0-9a-f-]{27}|v?\d+\.\d+\.\d+)/i;
+    /^(?:https?:\/\/|file:\/\/|vscode-file:\/\/|sidecar:\/\/|[A-Za-z]:\\|\/[\w.-]+\/|~\/|[@#-][\w.-]+|\S+@\S+\.\S+|\d+(?:\.\d+)*%?$|\d+[smhdw](?:\s+\d+[smhdw])*$|[0-9a-f]{8}-[0-9a-f-]{27}|v?\d+\.\d+\.\d+|[\w.-]+\.(?:md|json|mjs|js|cjs|ts|tsx|jsx|py|sh|cmd|bat|ps1|png|jpg|jpeg|gif|webp|svg|mp4|m4a|mp3|wav|txt|yml|yaml|toml|lock|css|html|pdf|zip)$)/i;
   const SKIP_COLLECT_CONTAINER_SEL =
-    '[data-testid*="message"], [data-testid*="turn"], [data-testid*="terminal"], [data-testid*="history"], [class*="xterm"]';
+    '[data-testid*="message"], [data-testid*="turn"], [data-testid*="terminal"], [data-testid*="history"], [data-testid="tab-file-tree-sidebar"], [aria-label="File path breadcrumbs"], [class*="xterm"]';
   const RE_MODEL_NAME = /^(?:Gemini|Claude|GPT|Llama|Qwen|DeepSeek)\b/i;
 
   const UNIT_KEY_NORM = {
@@ -123,21 +136,102 @@
   };
 
   const LANG_UI_LABELS = {
-    en: { title: 'Display Language', desc: 'Choose the display language for the Antigravity interface.' },
-    'zh-CN': { title: '界面语言', desc: '选择 Antigravity 客户端界面的显示语言（实时生效）。' },
-    'zh-TW': { title: '介面語言', desc: '選擇 Antigravity 應用程式的介面顯示語言（即時生效）。' },
-    'zh-SG': { title: '界面语言', desc: '选择 Antigravity 客户端界面的显示语言（实时生效）。' },
-    ja: { title: '表示言語', desc: 'Antigravity インターフェースの表示言語を選択します（即時反映）。' },
-    ko: { title: '표시 언어', desc: 'Antigravity 인터페이스의 표시 언어를 선택합니다 (즉시 적용).' },
-    vi: { title: 'Ngôn ngữ hiển thị', desc: 'Chọn ngôn ngữ hiển thị cho giao diện Antigravity (áp dụng ngay).' },
-    hi: { title: 'प्रदर्शन भाषा', desc: 'Antigravity इंटरफ़ेस के लिए प्रदर्शन भाषा चुनें (तुरंत लागू)।' },
-    id: { title: 'Bahasa Tampilan', desc: 'Pilih bahasa tampilan untuk antarmuka Antigravity (langsung aktif).' },
-    th: { title: 'ภาษาที่แสดง', desc: 'เลือกภาษาสำหรับหน้าจอ Antigravity (มีผลทันที)' },
-    es: { title: 'Idioma de la interfaz', desc: 'Elige el idioma de visualización para Antigravity (cambio instantáneo).' },
-    fr: { title: 'Langue d’affichage', desc: 'Choisissez la langue de l’interface Antigravity (application immédiate).' },
-    de: { title: 'Anzeigesprache', desc: 'Wählen Sie die Anzeigesprache für die Antigravity-Oberfläche (sofort aktiv).' },
-    pt: { title: 'Idioma de exibição', desc: 'Escolha o idioma da interface do Antigravity (aplicado instantaneamente).' },
-    it: { title: 'Lingua di visualizzazione', desc: 'Scegli la lingua dell’interfaccia di Antigravity (attiva subito).' }
+    en: {
+      title: 'Display Language',
+      desc: 'Choose the display language for the Antigravity interface.',
+      aiTitle: 'Sync AI Thinking & Reply Language',
+      aiDesc: 'Instruct the agent to think, summarize tool steps, and reply in the selected display language (off by default).'
+    },
+    'zh-CN': {
+      title: '界面语言',
+      desc: '选择 Antigravity 客户端界面的显示语言（实时生效）。',
+      aiTitle: '同步 AI 思考与回复语言',
+      aiDesc: '开启后自动让智能体的内部思考链、步骤摘要与回复跟随当前界面语言（默认关闭）。'
+    },
+    'zh-TW': {
+      title: '介面語言',
+      desc: '選擇 Antigravity 應用程式的介面顯示語言（即時生效）。',
+      aiTitle: '同步 AI 思考與回覆語言',
+      aiDesc: '開啟後自動讓 AI 代理的內部思考過程、步驟摘要與回覆跟隨目前介面語言（預設關閉）。'
+    },
+    'zh-SG': {
+      title: '界面语言',
+      desc: '选择 Antigravity 客户端界面的显示语言（实时生效）。',
+      aiTitle: '同步 AI 思考与回复语言',
+      aiDesc: '开启后让 Agent 内部思考与回复使用中文并保留常见英文技术术语（默认关闭）。'
+    },
+    ja: {
+      title: '表示言語',
+      desc: 'Antigravity インターフェースの表示言語を選択します（即時反映）。',
+      aiTitle: 'AI の思考と回答言語を同期',
+      aiDesc: '有効にすると、エージェントの思考プロセス・ステップ要約・回答を表示言語に合わせます（既定オフ）。'
+    },
+    ko: {
+      title: '표시 언어',
+      desc: 'Antigravity 인터페이스의 표시 언어를 선택합니다 (즉시 적용).',
+      aiTitle: 'AI 사고 및 답변 언어 동기화',
+      aiDesc: '활성화하면 에이전트의 내부 사고 과정, 단계 요약 및 응답 언어를 현재 표시 언어와 맞춥니다 (기본 꺼짐).'
+    },
+    vi: {
+      title: 'Ngôn ngữ hiển thị',
+      desc: 'Chọn ngôn ngữ hiển thị cho giao diện Antigravity (áp dụng ngay).',
+      aiTitle: 'Đồng bộ ngôn ngữ suy luận & phản hồi AI',
+      aiDesc: 'Tự động hướng dẫn Agent suy nghĩ, tóm tắt bước và trả lời bằng ngôn ngữ hiển thị hiện tại (mặc định tắt).'
+    },
+    hi: {
+      title: 'प्रदर्शन भाषा',
+      desc: 'Antigravity इंटरफ़ेस के लिए प्रदर्शन भाषा चुनें (तुरंत लागू)।',
+      aiTitle: 'AI सोच और उत्तर भाषा सिंक करें',
+      aiDesc: 'चालू करने पर एजेंट की आंतरिक सोच और उत्तर वर्तमान प्रदर्शन भाषा में होंगे (डिफ़ॉल्ट बंद)।'
+    },
+    id: {
+      title: 'Bahasa Tampilan',
+      desc: 'Pilih bahasa tampilan untuk antarmuka Antigravity (langsung aktif).',
+      aiTitle: 'Sinkronkan Bahasa Berpikir & Balasan AI',
+      aiDesc: 'Arahkan agen untuk berpikir dan membalas sesuai bahasa tampilan saat ini (nonaktif secara default).'
+    },
+    th: {
+      title: 'ภาษาที่แสดง',
+      desc: 'เลือกภาษาสำหรับหน้าจอ Antigravity (มีผลทันที)',
+      aiTitle: 'ซิงค์ภาษาการคิดและคำตอบของ AI',
+      aiDesc: 'ให้เอเจนต์คิด สรุปขั้นตอน และตอบกลับตามภาษาที่แสดงในปัจจุบัน (ปิดเป็นค่าเริ่มต้น)'
+    },
+    es: {
+      title: 'Idioma de la interfaz',
+      desc: 'Elige el idioma de visualización para Antigravity (cambio instantáneo).',
+      aiTitle: 'Sincronizar idioma de pensamiento y respuesta de IA',
+      aiDesc: 'Indica al agente que razone y responda en el idioma de visualización seleccionado (desactivado por defecto).'
+    },
+    fr: {
+      title: 'Langue d’affichage',
+      desc: 'Choisissez la langue de l’interface Antigravity (application immédiate).',
+      aiTitle: 'Synchroniser la langue de réflexion et de réponse IA',
+      aiDesc: 'Invite l’agent à réfléchir et répondre dans la langue d’affichage choisie (désactivé par défaut).'
+    },
+    de: {
+      title: 'Anzeigesprache',
+      desc: 'Wählen Sie die Anzeigesprache für die Antigravity-Oberfläche (sofort aktiv).',
+      aiTitle: 'KI-Denk- und Antwortsprache synchronisieren',
+      aiDesc: 'Weist den Agenten an, in der gewählten Anzeigesprache zu denken und zu antworten (standardmäßig aus).'
+    },
+    pt: {
+      title: 'Idioma de exibição',
+      desc: 'Escolha o idioma da interface do Antigravity (aplicado instantaneamente).',
+      aiTitle: 'Sincronizar idioma de raciocínio e resposta da IA',
+      aiDesc: 'Orienta o agente a raciocinar e responder no idioma de exibição selecionado (desativado por padrão).'
+    },
+    it: {
+      title: 'Lingua di visualizzazione',
+      desc: 'Scegli la lingua dell’interfaccia di Antigravity (attiva subito).',
+      aiTitle: 'Sincronizza lingua di pensiero e risposta IA',
+      aiDesc: 'Indica all’agente di ragionare e rispondere nella lingua di visualizzazione scelta (disattivato di default).'
+    },
+    ru: {
+      title: 'Язык интерфейса',
+      desc: 'Выберите язык отображения интерфейса Antigravity (применяется мгновенно).',
+      aiTitle: 'Синхронизировать язык мыслей и ответов ИИ',
+      aiDesc: 'Агент будет размышлять, описывать шаги и отвечать на выбранном языке интерфейса (по умолчанию выкл.).'
+    }
   };
 
   function fillTpl(tpl, vars) {
@@ -175,11 +269,21 @@
     return null;
   }
 
-  function translateDynamicPattern(trimmed, pat) {
+  function translateDynamicPattern(trimmed, pat, dict, lowerMultiWordDict) {
     if (!pat) return null;
     let m;
     const units = pat.units || {};
     const periods = pat.periods || {};
+    const lookupTerm = (rawTerm) => {
+      const k = String(rawTerm || '').trim();
+      if (!k) return k;
+      if (dict && typeof dict[k] === 'string') return dict[k];
+      if (lowerMultiWordDict && k.includes(' ')) {
+        const hit = lowerMultiWordDict[k.toLowerCase()];
+        if (typeof hit === 'string') return hit;
+      }
+      return k;
+    };
 
     if ((m = trimmed.match(/^(\d+(?:\.\d+)?)%\s*left$/i))) return fillTpl(pat.pctLeft, { 0: m[1] });
     if ((m = trimmed.match(/^(\d+)\s*(s|sec|secs|m|min|mins|h|hr|hrs|d|w|mo|y|yr|yrs)\s+ago$/i))) {
@@ -202,6 +306,17 @@
         0: formatDurationLocalized(m[2], pat)
       });
     }
+    if (pat.usedHourLimitRefresh && (m = trimmed.match(/^You have used some of your (\d+)-hour limit,\s*it will fully refresh in\s+(.+?)(\.)?$/i))) {
+      const sentence = fillTpl(pat.usedHourLimitRefresh, { 0: m[1], 1: formatDurationLocalized(m[2], pat) });
+      return sentence ? sentence + (m[3] ? '。' : '') : null;
+    }
+    if (pat.usedNamedLimitRefresh && (m = trimmed.match(/^You have used some of your (weekly|daily|monthly) limit,\s*it will fully refresh in\s+(.+?)(\.)?$/i))) {
+      const sentence = fillTpl(pat.usedNamedLimitRefresh, {
+        period: periods[m[1].toLowerCase()] || m[1],
+        0: formatDurationLocalized(m[2], pat)
+      });
+      return sentence ? sentence + (m[3] ? '。' : '') : null;
+    }
     if ((m = trimmed.match(/^(.+?)\s+(Weekly|Daily|Monthly)\s+limit$/i))) {
       return fillTpl(pat.modelNamedLimit, {
         0: m[1].trim(),
@@ -216,6 +331,27 @@
     if ((m = trimmed.match(/^(\d+)\s+projects?$/i))) return fillTpl(pat.projectsCount, { 0: m[1] });
     if ((m = trimmed.match(/^See all\s*\((\d+)\)$/i))) return fillTpl(pat.seeAll, { 0: m[1] });
     if ((m = trimmed.match(/^Show\s+(\d+)\s+more\s+subagents?$/i))) return fillTpl(pat.showMoreSubagents, { 0: m[1] });
+    if (pat.showBreakdowns && (m = trimmed.match(/^Show\s+(\d+)\s+breakdowns?$/i))) return fillTpl(pat.showBreakdowns, { 0: m[1] });
+    if (pat.hideBreakdowns && (m = trimmed.match(/^Hide\s+(\d+)\s+breakdowns?$/i))) return fillTpl(pat.hideBreakdowns, { 0: m[1] });
+    if (pat.stepsProgress && (m = trimmed.match(/^(\d+)\/(\d+)\s+steps?$/i))) return fillTpl(pat.stepsProgress, { 0: m[1], 1: m[2] });
+    if (pat.tokenCategoryCount && (m = trimmed.match(/^(Rules|Skills|Mcp Tools|MCP Tools|System|Conversation|Context|Tools|Memory|Files):\s*([\d,]+)\s*tokens?$/i))) {
+      const catKey = m[1].trim();
+      const catMap = pat.tokenCategories || {};
+      const catLabel = catMap[catKey.toLowerCase()] || lookupTerm(catKey);
+      return fillTpl(pat.tokenCategoryCount, { 0: catLabel, 1: m[2] });
+    }
+    if (pat.loadOlderShowing && (m = trimmed.match(/^Load older messages,\s*showing\s+(\d+)\s+of\s+(\d+)$/i))) {
+      return fillTpl(pat.loadOlderShowing, { 0: m[1], 1: m[2] });
+    }
+    if (pat.noMoreOlderShowing && (m = trimmed.match(/^No more older messages,\s*showing\s+(\d+)\s+of\s+(\d+)$/i))) {
+      return fillTpl(pat.noMoreOlderShowing, { 0: m[1], 1: m[2] });
+    }
+    if (pat.turnOf && (m = trimmed.match(/^Turn\s+(\d+)\s+of\s+(\d+)$/i))) {
+      return fillTpl(pat.turnOf, { 0: m[1], 1: m[2] });
+    }
+    if (pat.stillThinkingSec && (m = trimmed.match(/^Still thinking,\s*(\d+)\s*seconds?$/i))) {
+      return fillTpl(pat.stillThinkingSec, { 0: m[1] });
+    }
     if ((m = trimmed.match(/^Worked for\s+([<0-9smhd\s]+?)\s*·\s*(\d+)\s+updates?$/i))) {
       return fillTpl(pat.workedUpdates, { 0: formatDurationLocalized(m[1], pat), 1: m[2] });
     }
@@ -227,6 +363,18 @@
     }
     if ((m = trimmed.match(/^Running for\s+([<0-9smhd]+(?:\s+\d+[smhd])*)$/i))) {
       return fillTpl(pat.runningFor, { 0: formatDurationLocalized(m[1], pat) });
+    }
+    if (pat.runningTask && (m = trimmed.match(/^Running\s+(.+)$/)) && !/^for\s+\d/i.test(m[1])) {
+      return fillTpl(pat.runningTask, { 0: m[1].trim() });
+    }
+    if (pat.searchingTask && (m = trimmed.match(/^Searching\s+(.+)$/))) {
+      return fillTpl(pat.searchingTask, { 0: m[1].trim() });
+    }
+    if (pat.editingTask && (m = trimmed.match(/^Editing\s+(.+)$/))) {
+      return fillTpl(pat.editingTask, { 0: m[1].trim() });
+    }
+    if (pat.readingTask && (m = trimmed.match(/^Reading\s+(.+)$/))) {
+      return fillTpl(pat.readingTask, { 0: m[1].trim() });
     }
     if ((m = trimmed.match(/^Exited with code\s+(-?\d+)(\.)?$/i))) {
       return fillTpl(pat.exitedCode, { 0: m[1] }) + (m[2] ? '.' : '');
@@ -252,6 +400,74 @@
         if (mon) return fillTpl(pat.updatedDate, { mon, day: m[2], time: m[3] });
       }
       return fillTpl(pat.updatedTime, { time: m[3] });
+    }
+    if (pat.selectModelCurrent && (m = trimmed.match(/^Select model,\s*current:\s*(.+)$/i))) {
+      return fillTpl(pat.selectModelCurrent, { 0: m[1].trim() });
+    }
+    if (pat.modelLockedRunning && (m = trimmed.match(/^Model:\s*(.+?),\s*Model cannot be changed while the agent is running$/i))) {
+      return fillTpl(pat.modelLockedRunning, { 0: m[1].trim() });
+    }
+    if (pat.permSelectorCurrent && (m = trimmed.match(/^Agent permissions preset selector,\s*current:\s*(.+)$/i))) {
+      return fillTpl(pat.permSelectorCurrent, { 0: lookupTerm(m[1]) });
+    }
+    if (pat.permLockedRunning && (m = trimmed.match(/^Agent permissions preset:\s*(.+?),\s*Permissions cannot be changed while the agent is running$/i))) {
+      return fillTpl(pat.permLockedRunning, { 0: lookupTerm(m[1]) });
+    }
+    if (pat.addShortcutFor && (m = trimmed.match(/^Add shortcut for\s+(.+)$/i))) {
+      return fillTpl(pat.addShortcutFor, { action: lookupTerm(m[1]) });
+    }
+    if (pat.removeShortcutFor && (m = trimmed.match(/^Remove shortcut\s+(.+?)\s+for\s+(.+)$/i))) {
+      return fillTpl(pat.removeShortcutFor, { keys: m[1].trim(), action: lookupTerm(m[2]) });
+    }
+    if (pat.shortcutFor && (m = trimmed.match(/^Shortcut\s+(.+?)\s+for\s+(.+)$/i))) {
+      return fillTpl(pat.shortcutFor, { keys: m[1].trim(), action: lookupTerm(m[2]) });
+    }
+    if (pat.closeTarget && (m = trimmed.match(/^Close\s+([^\r\n]{1,100})$/))) {
+      return fillTpl(pat.closeTarget, { 0: lookupTerm(m[1]) });
+    }
+    if (pat.sendFeedbackAs && (m = trimmed.match(/^Send feedback as\s+(\S+@\S+)$/i))) {
+      return fillTpl(pat.sendFeedbackAs, { 0: m[1].trim() });
+    }
+    if (pat.justNow && /^(?:just now|now)$/i.test(trimmed)) {
+      return pat.justNow;
+    }
+    if (Array.isArray(pat.greetings) && pat.greetings.length === 7) {
+      const gRes = [
+        [/^Hi ([\s\S]+?), what can we get done today\?$/, 0],
+        [/^Hey (?!there,)([\s\S]+?), what should we build today\?$/, 1],
+        [/^Hey there, what should we build today\?$/, 2],
+        [/^Welcome back\. Where should we pick up\?$/, 3],
+        [/^Welcome back, ([\s\S]+?)\. Where should we pick up\?$/, 4],
+        [/^Good to see you\. What's next\?$/, 5],
+        [/^Good to see you, ([\s\S]+?)\. What's next\?$/, 6]
+      ];
+      for (const [re, idx] of gRes) {
+        const gm = trimmed.match(re);
+        if (gm && pat.greetings[idx]) {
+          return pat.greetings[idx].replace(/\{name\}/g, () => (gm[1] || '').trim());
+        }
+      }
+    }
+    if (pat.installTarget && (m = trimmed.match(/^Install\s+([^\r\n]{1,80})$/))) {
+      return fillTpl(pat.installTarget, { 0: m[1].trim() });
+    }
+    if (pat.detailsFor && (m = trimmed.match(/^Details for\s+([^\r\n]{1,80})$/))) {
+      return fillTpl(pat.detailsFor, { 0: m[1].trim() });
+    }
+    if (pat.moreActionsFor && (m = trimmed.match(/^More actions for\s+([^\r\n]{1,80})$/))) {
+      return fillTpl(pat.moreActionsFor, { 0: m[1].trim() });
+    }
+    if (pat.seeMoreIn && (m = trimmed.match(/^See more in\s+([^\r\n]{1,80})$/))) {
+      return fillTpl(pat.seeMoreIn, { 0: lookupTerm(m[1]) });
+    }
+    if (pat.pluginsIn && (m = trimmed.match(/^Plugins in\s+([^\r\n]{1,80})$/))) {
+      return fillTpl(pat.pluginsIn, { 0: lookupTerm(m[1]) });
+    }
+    if (pat.filterSkillsRules && (m = trimmed.match(/^Filter skills and rules:\s*(.+)$/i))) {
+      return fillTpl(pat.filterSkillsRules, { 0: lookupTerm(m[1]) });
+    }
+    if (pat.fixWithAgent && (m = trimmed.match(/^Fix with Agent:\s*(.+)$/i))) {
+      return fillTpl(pat.fixWithAgent, { 0: m[1].trim() });
     }
 
     if (/^(?:Explored|Edited|Ran)\b/i.test(trimmed)) {
@@ -296,6 +512,9 @@
       const parentText = el.parentElement ? el.parentElement.textContent || '' : '';
       if (/\band select\b|\/plan\b/i.test(parentText)) return ctxCfg.promptType;
     }
+    if (trimmed === 'System' && ctxCfg.themeSystem && el.closest('.agy-card, [role="radiogroup"], [role="listbox"]')) {
+      return ctxCfg.themeSystem;
+    }
     return dictVal;
   }
 
@@ -330,8 +549,16 @@
     const buildId = String(payload.buildId || 'agi18n-1.1.0');
     const locale = String(payload.locale || 'zh-CN');
     const enabled = payload.enabled !== false;
+    const syncAiOutputLang = payload.syncAiOutputLang === true;
     const shouldCollect = Boolean(payload.collectUntranslated);
     const dict = Object.assign(Object.create(null), payload.dict || {});
+    const lowerMultiWordDict = Object.create(null);
+    for (const [dk, dv] of Object.entries(dict)) {
+      if (dk.includes(' ') && dk.length >= 4 && dk.length <= 80 && /^[A-Za-z][A-Za-z0-9\s/-]*$/.test(dk)) {
+        const lk = dk.toLowerCase();
+        if (lowerMultiWordDict[lk] === undefined) lowerMultiWordDict[lk] = dv;
+      }
+    }
     const localeOptions = Array.isArray(payload.localeOptions) ? payload.localeOptions : [];
     const ctxOverrides = payload.contextOverrides || {};
     const patterns = payload.patterns || null;
@@ -542,6 +769,70 @@
         pop.appendChild(listWrap);
         document.body.appendChild(pop);
       });
+
+      let aiRow = document.getElementById('agi18n-ai-lang-row');
+      if (!aiRow) {
+        aiRow = document.createElement('div');
+        aiRow.id = 'agi18n-ai-lang-row';
+        aiRow.setAttribute('data-agi18n-ignore', 'true');
+        aiRow.className = 'py-2 px-3 w-full bg-transparent flex justify-between gap-4 items-center';
+      }
+      if (aiRow.parentElement !== themeCard || row.nextSibling !== aiRow) {
+        themeCard.insertBefore(aiRow, row.nextSibling);
+      }
+      if (aiRow.getAttribute('data-rendered-build') !== buildId) {
+        aiRow.setAttribute('data-rendered-build', buildId);
+        aiRow.innerHTML = '';
+
+        const aiLeft = document.createElement('div');
+        aiLeft.className = 'flex-1 flex flex-col gap-0.5';
+        const aiTitleSpan = document.createElement('span');
+        aiTitleSpan.textContent = uiCopy.aiTitle || LANG_UI_LABELS.en.aiTitle;
+        const aiDescSpan = document.createElement('span');
+        aiDescSpan.className = 'text-sm text-muted-foreground whitespace-pre-wrap';
+        aiDescSpan.textContent = uiCopy.aiDesc || LANG_UI_LABELS.en.aiDesc;
+        aiLeft.appendChild(aiTitleSpan);
+        aiLeft.appendChild(aiDescSpan);
+
+        const aiRight = document.createElement('div');
+        aiRight.className = 'shrink-0 flex items-center';
+        const toggleBtn = document.createElement('button');
+        toggleBtn.id = 'agi18n-ai-lang-switch';
+        toggleBtn.type = 'button';
+        toggleBtn.setAttribute('role', 'switch');
+        toggleBtn.setAttribute('aria-checked', String(syncAiOutputLang));
+        Object.assign(toggleBtn.style, {
+          width: '38px',
+          height: '21px',
+          borderRadius: '999px',
+          border: '1px solid rgba(128,128,128,0.32)',
+          background: syncAiOutputLang ? '#3b82f6' : 'rgba(128,128,128,0.28)',
+          position: 'relative',
+          cursor: 'pointer',
+          padding: '0',
+          transition: 'background 0.16s ease'
+        });
+        const knob = document.createElement('span');
+        Object.assign(knob.style, {
+          position: 'absolute',
+          top: '2px',
+          left: syncAiOutputLang ? '19px' : '2px',
+          width: '15px',
+          height: '15px',
+          borderRadius: '50%',
+          background: '#ffffff',
+          transition: 'left 0.16s ease',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+        });
+        toggleBtn.appendChild(knob);
+        toggleBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          requestLocaleSwitch(syncAiOutputLang ? '__ai_lang__:off' : '__ai_lang__:on');
+        });
+        aiRight.appendChild(toggleBtn);
+        aiRow.appendChild(aiLeft);
+        aiRow.appendChild(aiRight);
+      }
     }
 
     function syncCustomStyle(cssText) {
@@ -604,9 +895,14 @@
       const trimmed = raw.trim();
       if (!trimmed || KEEP_UNTRANSLATED_EXACT.has(trimmed)) return null;
 
-      let hit = resolveContextOverride(trimmed, contextEl, dict[trimmed], ctxOverrides);
+      let baseLookup = dict[trimmed];
+      if (typeof baseLookup !== 'string' && trimmed.includes(' ') && trimmed.length >= 4 && trimmed.length <= 80) {
+        baseLookup = lowerMultiWordDict[trimmed.toLowerCase()];
+      }
+      let hit = resolveContextOverride(trimmed, contextEl, baseLookup, ctxOverrides);
       if (typeof hit !== 'string' && trimmed.endsWith('.')) {
-        const base = dict[trimmed.slice(0, -1)];
+        const withoutDot = trimmed.slice(0, -1);
+        const base = dict[withoutDot] || (withoutDot.includes(' ') ? lowerMultiWordDict[withoutDot.toLowerCase()] : undefined);
         if (typeof base === 'string') {
           const dotChar = locale.startsWith('zh') || locale === 'ja' ? '。' : '.';
           hit = base.endsWith(dotChar) ? base : `${base}${dotChar}`;
@@ -619,8 +915,11 @@
       }
 
       if (!RE_ALPHA.test(trimmed)) return null;
-      const dyn = translateDynamicPattern(trimmed, patterns);
-      if (typeof dyn === 'string') return raw.replace(trimmed, () => dyn);
+      const dyn = translateDynamicPattern(trimmed, patterns, dict, lowerMultiWordDict);
+      if (typeof dyn === 'string') {
+        untrackedSet.delete(trimmed);
+        return raw.replace(trimmed, () => dyn);
+      }
 
       recordUntranslated(trimmed, contextEl);
       return null;
@@ -637,8 +936,8 @@
       if (typeof next === 'string') {
         textOrigMap.set(node, { original: sourceRaw, translated: next, buildId });
         if (node.nodeValue !== next) node.nodeValue = next;
-      } else if (rec && rec.translated === cur) {
-        node.nodeValue = sourceRaw;
+      } else if (rec) {
+        if (rec.translated === cur) node.nodeValue = sourceRaw;
         textOrigMap.delete(node);
       }
     }
@@ -666,8 +965,8 @@
           el.setAttribute(lastKey, nextVal);
           el[verProp] = buildId;
           if (cur !== nextVal) el.setAttribute(attr, nextVal);
-        } else if (savedOrig !== null && savedLast === cur) {
-          el.setAttribute(attr, savedOrig);
+        } else if (savedOrig !== null) {
+          if (savedLast === cur) el.setAttribute(attr, savedOrig);
           el.removeAttribute(origKey);
           el.removeAttribute(lastKey);
           el[verProp] = buildId;
@@ -844,6 +1143,7 @@
       closeLanguagePopover();
       if (fullUninstall) {
         document.getElementById('agi18n-language-row')?.remove();
+        document.getElementById('agi18n-ai-lang-row')?.remove();
         document.getElementById('agi18n-custom-css')?.remove();
         if (document.body) restoreDom(document.body);
       }

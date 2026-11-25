@@ -1,9 +1,282 @@
 /**
  * src/locales.mjs — Multi-locale metadata, script validators & localized dynamic UI patterns
- * Covers 14 locales: zh-CN, zh-TW, zh-SG, ja, ko, vi, hi, id, th, es, fr, de, pt, it
+ * Covers 15 locales: zh-CN, zh-TW, zh-SG, ja, ko, ru, vi, hi, id, th, es, fr, de, pt, it
  */
 
-export const SUPPORTED_LOCALES = Object.freeze({
+const EXTENDED_PATTERNS_BY_LOCALE = {
+  'zh-CN': {
+    justNow: '刚刚',
+    greetings: [
+      '嗨，{name}，今天想推进点什么？',
+      '嘿，{name}，今天打算构建什么？',
+      '你好，今天打算构建什么？',
+      '欢迎回来，我们接着哪儿继续？',
+      '欢迎回来，{name}。我们接着哪儿继续？',
+      '很高兴见到你，下一步做什么？',
+      '很高兴见到你，{name}。下一步做什么？'
+    ],
+    installTarget: '安装 {0}',
+    detailsFor: '{0} 的详情',
+    moreActionsFor: '{0} 的更多操作',
+    seeMoreIn: '查看更多「{0}」',
+    pluginsIn: '「{0}」分类下的插件',
+    filterSkillsRules: '筛选技能与规则：{0}',
+    fixWithAgent: '交给智能体修复：{0}'
+  },
+  'zh-TW': {
+    justNow: '剛剛',
+    greetings: [
+      '嗨，{name}，今天想完成什麼？',
+      '嘿，{name}，今天打算打造什麼？',
+      '嗨，今天打算打造什麼？',
+      '歡迎回來，我們從哪裡繼續？',
+      '歡迎回來，{name}。我們從哪裡繼續？',
+      '很高興見到你，下一步做什麼？',
+      '很高興見到你，{name}。下一步做什麼？'
+    ],
+    installTarget: '安裝 {0}',
+    detailsFor: '{0} 的詳細資訊',
+    moreActionsFor: '{0} 的更多動作',
+    seeMoreIn: '在「{0}」中查看更多',
+    pluginsIn: '「{0}」分類下的外掛程式',
+    filterSkillsRules: '篩選技能與規則：{0}',
+    fixWithAgent: '使用 AI 代理修復：{0}'
+  },
+  'zh-SG': {
+    justNow: '刚刚',
+    fixWithAgent: '使用 Agent 修复：{0}'
+  },
+  ja: {
+    justNow: 'たった今',
+    greetings: [
+      'こんにちは、{name}。今日は何を進めましょうか？',
+      'やあ、{name}。今日は何を作りましょうか？',
+      'こんにちは。今日は何を作りましょうか？',
+      'おかえりなさい。どこから再開しますか？',
+      'おかえりなさい、{name}。どこから再開しますか？',
+      'お疲れさまです。次は何をしますか？',
+      'お疲れさまです、{name}。次は何をしますか？'
+    ],
+    installTarget: '{0} をインストール',
+    detailsFor: '{0} の詳細',
+    moreActionsFor: '{0} のその他の操作',
+    seeMoreIn: '「{0}」をもっと見る',
+    pluginsIn: '「{0}」のプラグイン',
+    filterSkillsRules: 'スキルとルールを絞り込み: {0}',
+    fixWithAgent: 'エージェントで修正: {0}'
+  },
+  ko: {
+    justNow: '방금',
+    greetings: [
+      '안녕하세요, {name}님. 오늘 어떤 작업을 해볼까요?',
+      '반가워요, {name}님. 오늘 무엇을 만들어 볼까요?',
+      '안녕하세요! 오늘 무엇을 만들어 볼까요?',
+      '다시 오셨군요. 어디서부터 이어서 할까요?',
+      '다시 오셨군요, {name}님. 어디서부터 이어서 할까요?',
+      '반갑습니다. 다음 작업은 무엇인가요?',
+      '반갑습니다, {name}님. 다음 작업은 무엇인가요?'
+    ],
+    installTarget: '{0} 설치',
+    detailsFor: '{0} 세부 정보',
+    moreActionsFor: '{0} 추가 작업',
+    seeMoreIn: '{0} 더 보기',
+    pluginsIn: '{0} 플러그인',
+    filterSkillsRules: '스킬 및 규칙 필터: {0}',
+    fixWithAgent: '에이전트로 수정: {0}'
+  },
+  ru: {
+    justNow: 'только что',
+    greetings: [
+      'Привет, {name}! Чем займёмся сегодня?',
+      'Привет, {name}! Что создадим сегодня?',
+      'Привет! Что создадим сегодня?',
+      'С возвращением. С чего продолжим?',
+      'С возвращением, {name}. С чего продолжим?',
+      'Рады видеть вас. Что дальше?',
+      'Рады видеть вас, {name}. Что дальше?'
+    ],
+    installTarget: 'Установить {0}',
+    detailsFor: 'Подробнее о {0}',
+    moreActionsFor: 'Другие действия для {0}',
+    seeMoreIn: 'Ещё в категории «{0}»',
+    pluginsIn: 'Плагины в категории «{0}»',
+    filterSkillsRules: 'Фильтр навыков и правил: {0}',
+    fixWithAgent: 'Исправить с помощью агента: {0}'
+  },
+  vi: {
+    justNow: 'vừa xong',
+    greetings: [
+      'Chào {name}, hôm nay chúng ta sẽ làm gì?',
+      'Này {name}, hôm nay chúng ta xây dựng gì nào?',
+      'Xin chào, hôm nay chúng ta xây dựng gì nào?',
+      'Chào mừng quay lại. Tiếp tục từ đâu nhỉ?',
+      'Chào mừng quay lại, {name}. Tiếp tục từ đâu nhỉ?',
+      'Rất vui gặp lại bạn. Tiếp theo là gì?',
+      'Rất vui gặp lại bạn, {name}. Tiếp theo là gì?'
+    ],
+    installTarget: 'Cài đặt {0}',
+    detailsFor: 'Chi tiết về {0}',
+    moreActionsFor: 'Thao tác khác cho {0}',
+    seeMoreIn: 'Xem thêm trong {0}',
+    pluginsIn: 'Plugin trong {0}',
+    filterSkillsRules: 'Lọc kỹ năng và quy tắc: {0}',
+    fixWithAgent: 'Sửa bằng Agent: {0}'
+  },
+  hi: {
+    justNow: 'अभी',
+    greetings: [
+      'नमस्ते {name}, आज हम क्या काम पूरा करें?',
+      'हाय {name}, आज हम क्या बनाएं?',
+      'नमस्ते, आज हम क्या बनाएं?',
+      'वापसी पर स्वागत है। कहाँ से शुरू करें?',
+      'वापसी पर स्वागत है, {name}। कहाँ से शुरू करें?',
+      'आपसे मिलकर अच्छा लगा। आगे क्या करना है?',
+      'आपसे मिलकर अच्छा लगा, {name}। आगे क्या करना है?'
+    ],
+    installTarget: '{0} इंस्टॉल करें',
+    detailsFor: '{0} का विवरण',
+    moreActionsFor: '{0} के लिए अन्य क्रियाएं',
+    seeMoreIn: '{0} में और देखें',
+    pluginsIn: '{0} में प्लगइन',
+    filterSkillsRules: 'स्किल्स और नियम फ़िल्टर करें: {0}',
+    fixWithAgent: 'एजेंट से ठीक करें: {0}'
+  },
+  id: {
+    justNow: 'baru saja',
+    greetings: [
+      'Hai {name}, apa yang bisa kita selesaikan hari ini?',
+      'Hei {name}, apa yang ingin kita bangun hari ini?',
+      'Halo, apa yang ingin kita bangun hari ini?',
+      'Selamat datang kembali. Lanjut dari mana?',
+      'Selamat datang kembali, {name}. Lanjut dari mana?',
+      'Senang bertemu lagi. Apa selanjutnya?',
+      'Senang bertemu lagi, {name}. Apa selanjutnya?'
+    ],
+    installTarget: 'Instal {0}',
+    detailsFor: 'Detail untuk {0}',
+    moreActionsFor: 'Tindakan lainnya untuk {0}',
+    seeMoreIn: 'Lihat lainnya di {0}',
+    pluginsIn: 'Plugin di {0}',
+    filterSkillsRules: 'Filter keahlian dan aturan: {0}',
+    fixWithAgent: 'Perbaiki dengan Agen: {0}'
+  },
+  th: {
+    justNow: 'เมื่อสักครู่',
+    greetings: [
+      'สวัสดี {name} วันนี้เราจะทำอะไรกันดี?',
+      'เฮ้ {name} วันนี้เราจะสร้างอะไรกันดี?',
+      'สวัสดี วันนี้เราจะสร้างอะไรกันดี?',
+      'ยินดีต้อนรับกลับ เริ่มต่อจากตรงไหนดี?',
+      'ยินดีต้อนรับกลับ {name} เริ่มต่อจากตรงไหนดี?',
+      'ดีใจที่ได้พบคุณ ทำอะไรต่อดี?',
+      'ดีใจที่ได้พบคุณ {name} ทำอะไรต่อดี?'
+    ],
+    installTarget: 'ติดตั้ง {0}',
+    detailsFor: 'รายละเอียดของ {0}',
+    moreActionsFor: 'การดำเนินการเพิ่มเติมสำหรับ {0}',
+    seeMoreIn: 'ดูเพิ่มเติมใน {0}',
+    pluginsIn: 'ปลั๊กอินใน {0}',
+    filterSkillsRules: 'กรองทักษะและกฎ: {0}',
+    fixWithAgent: 'แก้ไขด้วยเอเจนต์: {0}'
+  },
+  es: {
+    justNow: 'ahora mismo',
+    greetings: [
+      'Hola {name}, ¿qué vamos a lograr hoy?',
+      'Hola {name}, ¿qué construimos hoy?',
+      'Hola, ¿qué construimos hoy?',
+      'Bienvenido de nuevo. ¿Por dónde seguimos?',
+      'Bienvenido de nuevo, {name}. ¿Por dónde seguimos?',
+      'Qué bueno verte. ¿Qué sigue?',
+      'Qué bueno verte, {name}. ¿Qué sigue?'
+    ],
+    installTarget: 'Instalar {0}',
+    detailsFor: 'Detalles de {0}',
+    moreActionsFor: 'Más acciones para {0}',
+    seeMoreIn: 'Ver más en {0}',
+    pluginsIn: 'Complementos en {0}',
+    filterSkillsRules: 'Filtrar habilidades y reglas: {0}',
+    fixWithAgent: 'Corregir con el agente: {0}'
+  },
+  fr: {
+    justNow: 'à l’instant',
+    greetings: [
+      'Bonjour {name}, sur quoi avançons-nous aujourd’hui ?',
+      'Salut {name}, que construisons-nous aujourd’hui ?',
+      'Bonjour, que construisons-nous aujourd’hui ?',
+      'Bon retour. Où reprenons-nous ?',
+      'Bon retour, {name}. Où reprenons-nous ?',
+      'Ravi de vous revoir. Quelle est la suite ?',
+      'Ravi de vous revoir, {name}. Quelle est la suite ?'
+    ],
+    installTarget: 'Installer {0}',
+    detailsFor: 'Détails pour {0}',
+    moreActionsFor: 'Plus d’actions pour {0}',
+    seeMoreIn: 'Voir plus dans {0}',
+    pluginsIn: 'Extensions dans {0}',
+    filterSkillsRules: 'Filtrer les compétences et règles : {0}',
+    fixWithAgent: 'Corriger avec l’agent : {0}'
+  },
+  de: {
+    justNow: 'gerade eben',
+    greetings: [
+      'Hallo {name}, was erledigen wir heute?',
+      'Hey {name}, was bauen wir heute?',
+      'Hallo, was bauen wir heute?',
+      'Willkommen zurück. Wo machen wir weiter?',
+      'Willkommen zurück, {name}. Wo machen wir weiter?',
+      'Schön dich zu sehen. Was steht als Nächstes an?',
+      'Schön dich zu sehen, {name}. Was steht als Nächstes an?'
+    ],
+    installTarget: '{0} installieren',
+    detailsFor: 'Details zu {0}',
+    moreActionsFor: 'Weitere Aktionen für {0}',
+    seeMoreIn: 'Mehr anzeigen in {0}',
+    pluginsIn: 'Plugins in {0}',
+    filterSkillsRules: 'Skills und Regeln filtern: {0}',
+    fixWithAgent: 'Mit Agent beheben: {0}'
+  },
+  pt: {
+    justNow: 'agora mesmo',
+    greetings: [
+      'Olá {name}, o que vamos realizar hoje?',
+      'Ei {name}, o que vamos construir hoje?',
+      'Olá, o que vamos construir hoje?',
+      'Bem-vindo de volta. De onde continuamos?',
+      'Bem-vindo de volta, {name}. De onde continuamos?',
+      'Bom ver você. Qual é o próximo passo?',
+      'Bom ver você, {name}. Qual é o próximo passo?'
+    ],
+    installTarget: 'Instalar {0}',
+    detailsFor: 'Detalhes de {0}',
+    moreActionsFor: 'Mais ações para {0}',
+    seeMoreIn: 'Ver mais em {0}',
+    pluginsIn: 'Plugins em {0}',
+    filterSkillsRules: 'Filtrar habilidades e regras: {0}',
+    fixWithAgent: 'Corrigir com o agente: {0}'
+  },
+  it: {
+    justNow: 'proprio ora',
+    greetings: [
+      'Ciao {name}, cosa portiamo a termine oggi?',
+      'Ehi {name}, cosa costruiamo oggi?',
+      'Ciao, cosa costruiamo oggi?',
+      'Bentornato. Da dove riprendiamo?',
+      'Bentornato, {name}. Da dove riprendiamo?',
+      'Felice di rivederti. Qual è il prossimo passo?',
+      'Felice di rivederti, {name}. Qual è il prossimo passo?'
+    ],
+    installTarget: 'Installa {0}',
+    detailsFor: 'Dettagli per {0}',
+    moreActionsFor: 'Altre azioni per {0}',
+    seeMoreIn: 'Vedi altro in {0}',
+    pluginsIn: 'Plugin in {0}',
+    filterSkillsRules: 'Filtra competenze e regole: {0}',
+    fixWithAgent: 'Correggi con l’agente: {0}'
+  }
+};
+
+const RAW_SUPPORTED_LOCALES = {
   'zh-CN': {
     code: 'zh-CN',
     name: '简体中文',
@@ -15,7 +288,8 @@ export const SUPPORTED_LOCALES = Object.freeze({
       globalDefault: '全局默认',
       permDefault: '默认确认',
       buttonView: '查看',
-      promptType: '输入'
+      promptType: '输入',
+      themeSystem: '跟随系统'
     },
     patterns: {
       pctLeft: '剩余 {0}%',
@@ -45,6 +319,40 @@ export const SUPPORTED_LOCALES = Object.freeze({
       commentsInFile: '「{1} 中有 {0} 条批注」',
       updatedDate: '更新于 {mon}月{day}日 {time}',
       updatedTime: '更新于 {time}',
+      tokenCategoryCount: '{0}：{1} Token',
+      tokenCategories: {
+        rules: '规则',
+        skills: '技能',
+        'mcp tools': 'MCP 工具',
+        system: '系统',
+        conversation: '对话',
+        context: '上下文',
+        tools: '工具',
+        memory: '记忆',
+        files: '文件'
+      },
+      showBreakdowns: '展开 {0} 项明细',
+      hideBreakdowns: '收起 {0} 项明细',
+      stepsProgress: '已完成 {0}/{1} 步',
+      loadOlderShowing: '加载更早消息（当前显示 {0} / {1}）',
+      noMoreOlderShowing: '没有更早的消息（共显示 {0} / {1}）',
+      turnOf: '第 {0} / {1} 轮',
+      stillThinkingSec: '仍在思考，已用时 {0} 秒',
+      runningTask: '正在运行：{0}',
+      searchingTask: '正在搜索：{0}',
+      editingTask: '正在编辑：{0}',
+      readingTask: '正在读取：{0}',
+      closeTarget: '关闭 {0}',
+      sendFeedbackAs: '以 {0} 身份发送反馈',
+      selectModelCurrent: '选择模型，当前：{0}',
+      modelLockedRunning: '模型：{0}（智能体运行期间无法切换模型）',
+      permSelectorCurrent: '智能体权限预设选择器，当前：{0}',
+      permLockedRunning: '智能体权限预设：{0}（智能体运行期间无法修改权限）',
+      shortcutFor: '「{action}」的快捷键：{keys}',
+      addShortcutFor: '为「{action}」添加快捷键',
+      removeShortcutFor: '移除「{action}」的快捷键 {keys}',
+      usedHourLimitRefresh: '你已使用部分 {0} 小时限额，将在 {1}后完全恢复',
+      usedNamedLimitRefresh: '你已使用部分{period}限额，将在 {0}后完全恢复',
       periods: { weekly: '每周', daily: '每日', monthly: '每月' },
       units: { s: '秒', m: '分钟', h: '小时', d: '天', w: '周', mo: '个月', y: '年' },
       stepVerbs: { explored: '已查看', edited: '已编辑', ran: '已运行' },
@@ -85,7 +393,8 @@ export const SUPPORTED_LOCALES = Object.freeze({
       globalDefault: '全域預設',
       permDefault: '預設確認',
       buttonView: '檢視',
-      promptType: '輸入'
+      promptType: '輸入',
+      themeSystem: '跟隨系統'
     },
     patterns: {
       pctLeft: '剩餘 {0}%',
@@ -115,6 +424,40 @@ export const SUPPORTED_LOCALES = Object.freeze({
       commentsInFile: '「{1} 中有 {0} 則註解」',
       updatedDate: '更新於 {mon}月{day}日 {time}',
       updatedTime: '更新於 {time}',
+      tokenCategoryCount: '{0}：{1} Token',
+      tokenCategories: {
+        rules: '規則',
+        skills: '技能',
+        'mcp tools': 'MCP 工具',
+        system: '系統',
+        conversation: '對話',
+        context: '上下文',
+        tools: '工具',
+        memory: '記憶',
+        files: '檔案'
+      },
+      showBreakdowns: '展開 {0} 項明細',
+      hideBreakdowns: '收合 {0} 項明細',
+      stepsProgress: '已完成 {0}/{1} 步',
+      loadOlderShowing: '載入較早訊息（目前顯示 {0} / {1}）',
+      noMoreOlderShowing: '沒有更早的訊息（共顯示 {0} / {1}）',
+      turnOf: '第 {0} / {1} 輪',
+      stillThinkingSec: '仍在思考，已耗時 {0} 秒',
+      runningTask: '正在執行：{0}',
+      searchingTask: '正在搜尋：{0}',
+      editingTask: '正在編輯：{0}',
+      readingTask: '正在讀取：{0}',
+      closeTarget: '關閉 {0}',
+      sendFeedbackAs: '以 {0} 身分傳送意見回饋',
+      selectModelCurrent: '選擇模型，目前：{0}',
+      modelLockedRunning: '模型：{0}（AI 代理執行期間無法切換模型）',
+      permSelectorCurrent: 'AI 代理權限預設選擇器，目前：{0}',
+      permLockedRunning: 'AI 代理權限預設：{0}（AI 代理執行期間無法修改權限）',
+      shortcutFor: '「{action}」的快捷鍵：{keys}',
+      addShortcutFor: '為「{action}」新增快捷鍵',
+      removeShortcutFor: '移除「{action}」的快捷鍵 {keys}',
+      usedHourLimitRefresh: '你已使用部分 {0} 小時限額，將於 {1}後完全恢復',
+      usedNamedLimitRefresh: '你已使用部分{period}限額，將於 {0}後完全恢復',
       periods: { weekly: '每週', daily: '每日', monthly: '每月' },
       units: { s: '秒', m: '分鐘', h: '小時', d: '天', w: '週', mo: '個月', y: '年' },
       stepVerbs: { explored: '已檢視', edited: '已編輯', ran: '已執行' },
@@ -148,7 +491,14 @@ export const SUPPORTED_LOCALES = Object.freeze({
       globalDefault: '全局默认',
       permDefault: '默认确认',
       buttonView: '查看',
-      promptType: '输入'
+      promptType: '输入',
+      themeSystem: '跟随系统'
+    },
+    patterns: {
+      showMoreSubagents: '展开其余 {0} 个 Subagent',
+      modelLockedRunning: '模型：{0}（Agent 运行期间无法切换模型）',
+      permSelectorCurrent: 'Agent 权限预设选择器，当前：{0}',
+      permLockedRunning: 'Agent 权限预设：{0}（Agent 运行期间无法修改权限）'
     }
   },
   ja: {
@@ -832,8 +1182,114 @@ export const SUPPORTED_LOCALES = Object.freeze({
         'edited artifacts': 'Artefatti modificati'
       }
     }
+  },
+  ru: {
+    code: 'ru',
+    name: 'Русский',
+    englishName: 'Russian',
+    scriptType: 'non-latin',
+    promptFile: 'ru.md',
+    contextOverrides: {
+      dialogPlan: 'Тарифный план',
+      globalDefault: 'По умолчанию (глобально)',
+      permDefault: 'По умолчанию (с подтверждением)',
+      buttonView: 'Открыть',
+      promptType: 'Введите',
+      themeSystem: 'Системная'
+    },
+    patterns: {
+      pctLeft: 'Осталось {0}%',
+      ago: '{0} {unit} назад',
+      lessThanOneMin: 'менее 1 мин',
+      resetsIn: 'Сброс через {0}',
+      windowLimitResets: 'Лимит на {0} {unit}, сброс через {1}',
+      namedLimitResets: '{period} лимит, сброс через {0}',
+      modelNamedLimit: '{period} лимит {0}',
+      filesChanged: 'Изменено файлов: {0}',
+      toolsCount: 'Инструментов: {0}',
+      toolsExcluded: 'Исключено инструментов: {0}',
+      activeConvs: 'Активных диалогов: {0}',
+      updatesCount: 'Обновлений: {0}',
+      projectsCount: 'Проектов: {0}',
+      seeAll: 'Показать все ({0})',
+      showMoreSubagents: 'Показать ещё субагентов ({0})',
+      workedUpdates: 'Выполнено за {0} · обновлений: {1}',
+      workedFor: 'Выполнено за {0}',
+      thoughtFor: 'Размышление: {0}',
+      runningFor: 'Выполняется {0}',
+      exitedCode: 'Код завершения {0}',
+      yourPlan: 'Ваш план: {0}',
+      availableCredits: 'Доступные ИИ-кредиты: {0}',
+      startedDuring: 'Запущено во время «{0}»',
+      startedFrom: 'Запущено из «{0}»',
+      commentsInFile: '«Комментариев в {1}: {0}»',
+      updatedDate: 'Обновлено {day}.{mon} в {time}',
+      updatedTime: 'Обновлено в {time}',
+      tokenCategoryCount: '{0}: {1} токенов',
+      tokenCategories: {
+        rules: 'Правила',
+        skills: 'Навыки',
+        'mcp tools': 'Инструменты MCP',
+        system: 'Система',
+        conversation: 'Диалог',
+        context: 'Контекст',
+        tools: 'Инструменты',
+        memory: 'Память',
+        files: 'Файлы'
+      },
+      showBreakdowns: 'Показать детализацию ({0})',
+      hideBreakdowns: 'Скрыть детализацию ({0})',
+      stepsProgress: 'Шагов: {0}/{1}',
+      loadOlderShowing: 'Загрузить старые сообщения (показано {0} из {1})',
+      noMoreOlderShowing: 'Старых сообщений больше нет (показано {0} из {1})',
+      turnOf: 'Шаг {0} из {1}',
+      stillThinkingSec: 'Продолжаю размышлять ({0} с)',
+      runningTask: 'Выполняется: {0}',
+      searchingTask: 'Поиск: {0}',
+      editingTask: 'Редактирование: {0}',
+      readingTask: 'Чтение: {0}',
+      closeTarget: 'Закрыть {0}',
+      sendFeedbackAs: 'Отправить отзыв как {0}',
+      selectModelCurrent: 'Выбрать модель, текущая: {0}',
+      modelLockedRunning: 'Модель: {0} (нельзя сменить во время работы агента)',
+      permSelectorCurrent: 'Набор разрешений агента, текущий: {0}',
+      permLockedRunning: 'Разрешения агента: {0} (нельзя изменить во время работы)',
+      shortcutFor: 'Сочетание для «{action}»: {keys}',
+      addShortcutFor: 'Добавить сочетание для «{action}»',
+      removeShortcutFor: 'Удалить сочетание {keys} для «{action}»',
+      usedHourLimitRefresh: 'Часть {0}-часового лимита использована, полное восстановление через {1}',
+      usedNamedLimitRefresh: 'Часть лимита ({period}) использована, полное восстановление через {0}',
+      periods: { weekly: 'Недельный', daily: 'Дневной', monthly: 'Месячный' },
+      units: { s: 'с', m: 'мин', h: 'ч', d: 'дн.', w: 'нед.', mo: 'мес.', y: 'г.' },
+      stepVerbs: { explored: 'Изучено', edited: 'Изменено', ran: 'Выполнено' },
+      stepNouns: { file: 'файлов', artifact: 'артефактов', command: 'команд' },
+      stepJoiner: ', ',
+      stepPhrases: {
+        explored: 'Изучено',
+        'explored file': 'Изучен файл',
+        'explored files': 'Изучены файлы',
+        'explored artifact': 'Изучен артефакт',
+        'explored artifacts': 'Изучены артефакты',
+        'ran command': 'Выполнена команда',
+        'ran commands': 'Выполнены команды',
+        edited: 'Изменено',
+        'edited file': 'Изменён файл',
+        'edited files': 'Изменены файлы',
+        'edited artifact': 'Изменён артефакт',
+        'edited artifacts': 'Изменены артефакты'
+      }
+    }
   }
-});
+};
+
+for (const [code, spec] of Object.entries(RAW_SUPPORTED_LOCALES)) {
+  const ext = EXTENDED_PATTERNS_BY_LOCALE[code];
+  if (ext) {
+    spec.patterns = { ...(spec.patterns || {}), ...ext };
+  }
+}
+
+export const SUPPORTED_LOCALES = Object.freeze(RAW_SUPPORTED_LOCALES);
 
 export const LOCALE_MENU_OPTIONS = Object.freeze([
   { code: 'en', label: 'English (Default)' },
@@ -842,6 +1298,7 @@ export const LOCALE_MENU_OPTIONS = Object.freeze([
   { code: 'zh-TW', label: '繁體中文' },
   { code: 'ja', label: '日本語 (Japanese)' },
   { code: 'ko', label: '한국어 (Korean)' },
+  { code: 'ru', label: 'Русский (Russian)' },
   { code: 'vi', label: 'Tiếng Việt (Vietnamese)' },
   { code: 'hi', label: 'हिन्दी (Hindi)' },
   { code: 'id', label: 'Bahasa Indonesia (Indonesian)' },
@@ -853,8 +1310,8 @@ export const LOCALE_MENU_OPTIONS = Object.freeze([
   { code: 'it', label: 'Italiano (Italian)' }
 ]);
 
-// Matches Hanzi, Hiragana/Katakana, Hangul, Thai, Devanagari (Hindi), and accented European/Vietnamese Latin
-export const RE_NON_ENGLISH_SCRIPT = /[\u00c0-\u024f\u0900-\u097f\u0e00-\u0e7f\u1e00-\u1eff\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/;
+// Matches Hanzi, Hiragana/Katakana, Hangul, Cyrillic, Thai, Devanagari (Hindi), and accented European/Vietnamese Latin
+export const RE_NON_ENGLISH_SCRIPT = /[\u00c0-\u024f\u0400-\u04ff\u0900-\u097f\u0e00-\u0e7f\u1e00-\u1eff\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/;
 
 export function normalizeLocaleCode(raw) {
   const input = String(raw || '').trim();
@@ -869,6 +1326,7 @@ export function normalizeLocaleCode(raw) {
   if (lower === 'sg' || lower === 'zh-en' || lower === 'zh-mix' || lower === 'zh-tech') return 'zh-SG';
   if (lower === 'jp') return 'ja';
   if (lower === 'kr') return 'ko';
+  if (lower === 'ru' || lower.startsWith('ru-') || lower === 'rus') return 'ru';
   if (lower === 'vn') return 'vi';
   if (lower === 'in' || lower === 'hi-in') return 'hi';
   if (lower === 'id-id' || lower === 'ms') return 'id';
@@ -886,7 +1344,7 @@ export function getLocaleSpec(localeCode) {
   const fallback = spec.fallbackLocale ? SUPPORTED_LOCALES[spec.fallbackLocale] : SUPPORTED_LOCALES['zh-CN'];
   return {
     ...spec,
-    contextOverrides: spec.contextOverrides || fallback.contextOverrides,
-    patterns: spec.patterns || fallback.patterns
+    contextOverrides: spec.contextOverrides ? { ...fallback.contextOverrides, ...spec.contextOverrides } : fallback.contextOverrides,
+    patterns: spec.patterns ? { ...fallback.patterns, ...spec.patterns } : fallback.patterns
   };
 }

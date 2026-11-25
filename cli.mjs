@@ -31,7 +31,8 @@ import {
   removeMacShellLaunchers,
   removeSkillLink,
   startBackgroundDaemon,
-  stopBackgroundDaemon
+  stopBackgroundDaemon,
+  syncAgentLanguageRule
 } from './src/service.mjs';
 import { evaluateOnTarget, fetchDevToolsPages } from './src/daemon.mjs';
 
@@ -51,13 +52,26 @@ const PROTECTED_TERMS = new Set([
   'Antigravity',
   'Antigravity Insiders',
   'Google Antigravity',
-  'Worktree'
+  'Worktree',
+  'Ctrl',
+  'Alt',
+  'Shift',
+  'Cmd',
+  'Enter',
+  'Ctrl+Enter',
+  'Cmd+Enter',
+  'Shift+Enter',
+  'Tari',
+  'Nord',
+  'Google Sans',
+  'Google AI Ultra',
+  'Google AI Pro'
 ]);
 
 const RE_ALPHA = /[A-Za-z]/;
 const RE_UNSAFE_VALUE = /[<>\x00-\x08\x0b\x0c\x0e-\x1f\u200b-\u200f\ufeff]/;
 const RE_NON_UI_KEY =
-  /^(?:https?:\/\/|file:\/\/|vscode-file:\/\/|sidecar:\/\/|[A-Za-z]:\\|\/[\w.-]+\/|[@#][\w.-]+|\d+(?:\.\d+)*%?|[0-9a-f]{8}-[0-9a-f-]{27}|v?\d+\.\d+\.\d+)/i;
+  /^(?:https?:\/\/|file:\/\/|vscode-file:\/\/|sidecar:\/\/|[A-Za-z]:\\|\/[\w.-]+\/|[@#][\w.-]+|\S+@\S+\.\S+|\d+(?:\.\d+)*%?$|\d+[smhdw](?:\s+\d+[smhdw])*$|[0-9a-f]{8}-[0-9a-f-]{27}|v?\d+\.\d+\.\d+|[\w.-]+\.(?:md|json|mjs|js|cjs|ts|tsx|jsx|py|sh|cmd|bat|ps1|png|jpg|jpeg|gif|webp|svg|mp4|m4a|mp3|wav|txt|yml|yaml|toml|lock|css|html|pdf|zip)$)/i;
 
 function getArgOption(args, flag, fallback = '') {
   for (let i = 0; i < args.length; i++) {
@@ -88,7 +102,7 @@ export function validateAndFilterTranslations(rawPayload, localeCode = '') {
     const key = rawKey.trim();
     const val = rawVal.trim();
     if (!val) continue;
-    if (key.length < 2 || key.length > 220 || val.length > 300) {
+    if (key.length < 2 || key.length > 520 || val.length > 680) {
       result.rejected.push({ key, reason: 'length_out_of_bounds' });
       continue;
     }
@@ -148,7 +162,7 @@ const LIVE_DOM_SCAN_EXPR = `(() => {
   }
   const origMap = rt && rt.textOrigMap instanceof WeakMap ? rt.textOrigMap : null;
   const docTitlePrefix = String(document.title || '').split(' - ')[0].trim();
-  const skipSel = 'code, pre, kbd, samp, script, style, noscript, textarea, input, [contenteditable="true"], .monaco-editor, .monaco-diff-editor, .xterm, .prose, .markdown, [data-markdown-root], [data-testid="user-message-content"], [data-testid="conversation-row-sidebar"] a[href^="/c/"], [data-testid="conversation-row-sidebar"] span.truncate, [data-testid="conversation-row-history"] a[href^="/c/"], [data-testid="conversation-row-history"] span.truncate, [data-testid="breadcrumb-segment"], [data-agi18n-ignore="true"]';
+  const skipSel = 'code, pre, kbd, samp, script, style, noscript, textarea, input, [contenteditable="true"], .monaco-editor, .monaco-diff-editor, .xterm, [class*="xterm"], .prose, .markdown, [data-markdown-root], [data-testid*="message"], [data-testid*="turn"], [data-testid*="terminal"], [data-testid*="history"], [data-testid="tab-file-tree-sidebar"], [aria-label="File path breadcrumbs"], [data-testid="conversation-row-sidebar"] a[href^="/c/"], [data-testid="conversation-row-sidebar"] span.truncate, [data-testid="conversation-row-history"] a[href^="/c/"], [data-testid="conversation-row-history"] span.truncate, [data-testid="breadcrumb-segment"], [data-agi18n-ignore="true"]';
   if (document.body) {
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode() && out.size < 400) {
@@ -179,6 +193,21 @@ const DYNAMIC_KNOWN_PATTERNS = [
   /^Exited with code\s+-?\d+\.?$/i,
   /^(?:Explored|Edited|Ran)\b/i,
   /^Updated\s+.+$/i,
+  /^You have used some of your (?:\d+-hour|weekly|daily|monthly) limit,\s*it will fully refresh in\s+.+$/i,
+  /^(?:Show|Hide)\s+\d+\s+breakdowns?$/i,
+  /^\d+\/\d+\s+steps?$/i,
+  /^(?:Rules|Skills|Mcp Tools|MCP Tools|System|Conversation|Context|Tools|Memory|Files):\s*[\d,]+\s*tokens?$/i,
+  /^(?:Load|No more) older messages,\s*showing\s+\d+\s+of\s+\d+$/i,
+  /^Turn\s+\d+\s+of\s+\d+$/i,
+  /^Still thinking,\s*\d+\s*seconds?$/i,
+  /^Running\s+for\s+.+$/i,
+  /^(?:Running|Searching|Editing|Reading)\s+.+$/,
+  /^Select model,\s*current:\s*.+$/i,
+  /^Model:\s*.+?,\s*Model cannot be changed while the agent is running$/i,
+  /^Agent permissions preset(?: selector)?(?:,\s*current)?:\s*.+$/i,
+  /^(?:Add shortcut for|Remove shortcut\s+.+?\s+for|Shortcut\s+.+?\s+for)\s+.+$/i,
+  /^Close\s+.+$/,
+  /^Send feedback as\s+\S+@\S+$/i,
   /^[“"]?\d+\s+comments?\s+in\s+.+[”"]?$/i,
   /^(?:Gemini|Claude|GPT|Llama|Qwen|DeepSeek)\b/i
 ];
@@ -398,6 +427,7 @@ async function main() {
     const targetArg = args.find((a) => !a.startsWith('--'));
     if (targetArg) {
       const updated = writeConfigFile({ locale: targetArg });
+      syncAgentLanguageRule(updated.locale, updated.syncAiOutputLang === true);
       const { dictCount } = createPayloadBuilder().refreshIfNeeded();
       console.log(
         JSON.stringify(
@@ -460,7 +490,12 @@ async function main() {
       installPatch.collectUntranslated = true;
       installPatch.autoSyncAi = true;
     }
+    if (args.includes('--sync-ai-lang')) {
+      installPatch.syncAiOutputLang = true;
+    }
     if (Object.keys(installPatch).length > 0) writeConfigFile(installPatch);
+    const currentCfg = readJsonFile(FILES.config, {});
+    syncAgentLanguageRule(currentCfg.locale || 'zh-CN', currentCfg.syncAiOutputLang === true);
     const channels = resolveActiveChannels('auto');
     let updatedShortcuts = 0;
     let macLaunchers = [];
@@ -507,6 +542,7 @@ async function main() {
     stopBackgroundDaemon();
     configureAutostart(false);
     removeSkillLink();
+    syncAgentLanguageRule('en', false);
     if (process.platform === 'darwin') removeMacShellLaunchers();
     for (const ch of resolveActiveChannels('auto')) {
       const port = readDevToolsPort(ch.portFile);
@@ -557,6 +593,35 @@ async function main() {
           acceptedCount: Object.keys(accepted).length,
           rejectedCount: rejected.length,
           ...saved
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+
+  if (cmd === 'ai-lang') {
+    const mode = (args.find((a) => !a.startsWith('--')) || '').toLowerCase();
+    if (mode === 'on' || mode === 'enable' || mode === 'true') {
+      const updated = writeConfigFile({ syncAiOutputLang: true });
+      const ruleFile = syncAgentLanguageRule(updated.locale, true);
+      console.log(JSON.stringify({ ok: true, syncAiOutputLang: true, locale: updated.locale, ruleFile }, null, 2));
+      return;
+    }
+    if (mode === 'off' || mode === 'disable' || mode === 'false') {
+      const updated = writeConfigFile({ syncAiOutputLang: false });
+      syncAgentLanguageRule(updated.locale, false);
+      console.log(JSON.stringify({ ok: true, syncAiOutputLang: false, locale: updated.locale, ruleFile: '' }, null, 2));
+      return;
+    }
+    const cur = readJsonFile(FILES.config, {});
+    console.log(
+      JSON.stringify(
+        {
+          syncAiOutputLang: cur.syncAiOutputLang === true,
+          locale: normalizeLocaleCode(cur.locale || 'zh-CN'),
+          usage: 'node cli.mjs ai-lang <on|off>'
         },
         null,
         2

@@ -2,86 +2,96 @@
 
 # antigravity-langpack
 
-**纯明文零二进制、免改 `app.asar` 的 Google Antigravity 多语言界面包（覆盖 13 种语言 / 14 套词库，支持 Windows / macOS / Linux，兼容正式版与 Insiders 预览版）。**
+Google Antigravity（`Stable` & `Insiders`）纯文本原生多语言界面包。  
+基于本机 CDP 事件流挂载，不改 `app.asar`、保留 macOS 官方公证签名，内置 15 套离线词库（每套 2,065 条）。
 
 <p>
   <a href="../README.md">English</a> ·
   <b>简体中文</b> ·
   <a href="./README.zh-TW.md">繁體中文</a> ·
   <a href="./README.ja.md">日本語</a> ·
-  <a href="./README.ko.md">한국어</a>
+  <a href="./README.ko.md">한국어</a> ·
+  <a href="./README.ru.md">Русский</a>
 </p>
 
 <p>
   <a href="../LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="GPL-3.0 License" /></a>
-  <a href="https://linux.do"><img src="https://img.shields.io/badge/开源社区-LINUX%20DO-1C1C1E?style=flat-square&logo=linux&logoColor=34D399" alt="LINUX DO 社区" /></a>
+  <a href="https://linux.do"><img src="https://img.shields.io/badge/Community-LINUX%20DO-1C1C1E?style=flat-square&logo=linux&logoColor=34D399" alt="LINUX DO" /></a>
 </p>
 
-<p align="center">
-  <img src="./demo.gif" width="840" alt="antigravity-langpack Native Display Language Switcher Demo" />
-</p>
+<img src="./demo.gif" width="840" alt="antigravity-langpack Appearance Switcher" />
 
 </div>
 
----
+## 界面实景（主工作台 · 插件市场全量汉化 · 15 国词库）
 
-## 核心特性
+<p align="center">
+  <img src="./assets/bento-zh-CN.png" width="880" alt="主工作台、插件市场全量汉化与外观原生控件" />
+</p>
 
-1. **原生「设置 → 外观」下拉即时切换（免重启）**：
-   在客户端 `设置 → 外观` 卡片第一行自动挂载与官方样式一致的 **「界面语言」** 下拉框，无需重启窗口即可在 **13 种语言（14 套词库，含 `简体中文` 与保留 `Agent / Artifact` 原词的 `简体中文 (英文术语)`）** 和原版英文之间即时切换。
-2. **不改 `app.asar`，macOS 不破签名、常规更新免重打补丁**：
-   完全不触碰客户端安装目录文件：macOS 上 100% 保留 Google 官方公证签名（不弹“应用已损坏”或钥匙串密码框）；正式版与 Insiders 日常自动升级后无需重新手动打补丁。
-3. **100% 纯明文、零 `.exe`、零第三方依赖、免管理员权限**：
-   全仓库无任何 `.exe` / `.dll` 二进制文件，`package.json` 零外部依赖，源码透明可审；仅写入当前用户目录（无需管理员权限或 `sudo`）。
-4. **全量预置词库 + 按需沙箱增量补词（默认零后台采集）**：
-   每套语言均预置 **1,920 条** 完整校准词条，开箱即用。默认关闭后台文本收集与自动调用 AI；当未来新版本新增未翻译按钮时，可手动运行 `node cli.mjs sync-ai` 通过本机只读沙箱模式增量补齐至 `dict/learned.<lang>.json`。
+<p align="center">
+  <img src="./assets/locales-gallery.png" width="880" alt="15 套本地离线词库预览" />
+</p>
 
----
+## 安装
 
-## 快速安装
+无需管理员或 `sudo` 权限。若本机未安装 `Node.js >= 22.13`，安装脚本会自动拉取经官方 `SHASUMS256.txt` 校验的独立便携运行时至私有 `.runtime/` 目录。
 
-需要官方 **Node.js >= 22.13.0**。
+**macOS / Linux**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/CHANPAJN/antigravity-langpack/main/install.sh | sh
+```
+
+**Windows (PowerShell)**
+
+```powershell
+irm https://raw.githubusercontent.com/CHANPAJN/antigravity-langpack/main/install.ps1 | iex
+```
+
+**AI 对话一键配置**（粘贴至 Antigravity / Claude Code / Cursor，详见 [AI_INSTALL.md](../AI_INSTALL.md)）
+
+```text
+请阅读 https://github.com/CHANPAJN/antigravity-langpack/blob/main/AI_INSTALL.md 并帮我安装激活 Antigravity 简体中文语言包（zh-CN）。
+```
+
+**源码克隆安装**
 
 ```bash
 git clone https://github.com/CHANPAJN/antigravity-langpack.git
 cd antigravity-langpack
-
-# 默认安装（简体中文）
-node cli.mjs install
-
-# 指定初始语言（如保留英文术语版 zh-en、繁中 zh-TW、日语 ja 等）
-node cli.mjs install --lang zh-en
-
-# 可选参数：macOS 生成 3 行纯 Shell 脚本的 Dock 免重开启动器
-node cli.mjs install --mac-launcher
-
-# 可选参数：开启新版本未翻译按钮后台自动补词（12 小时冷却锁 + 只读沙箱）
-node cli.mjs install --auto-sync
-
-# 可选参数：显式安装对话触发技能至 ~/.gemini/config/skills/
-node cli.mjs install --with-skill
+node cli.mjs install                # 默认 zh-CN，可传 --lang zh-SG / zh-TW / ja / ko / ru
+node cli.mjs install --mac-launcher # 可选：macOS 生成纯脚本 Dock 启动器
 ```
 
-日常也可随时用一行命令手动补词或开关后台自动补词（实时热生效，无需重启）：
+## 使用与命令
+
+安装后打开 **`设置 → 外观`** 即可使用两项原生控件：
+
+- **界面语言**：免重启即时切换 15 套本地词库与原版 `English (Default)`。
+- **同步 AI 思考与回复语言**：默认关闭（`false`）；按需开启后自动让智能体的内部思考链、步骤摘要与回复跟随当前界面语言。
+
 ```bash
-node cli.mjs sync-ai         # 手动触发一次增量新词翻译
-node cli.mjs auto-sync on    # 开启后台自动检测并翻译新词（传 off 关闭）
+node cli.mjs status          # 查看守护进程、当前语种与连接端口
+node cli.mjs lang            # 列出全部 15 套词库及词条数
+node cli.mjs lang zh-SG      # 命令行即时切换语种（如保留英文技术词版 zh-SG 或 en）
+node cli.mjs ai-lang on      # 开启 AI 思考与回复语言同步（传 off 关闭）
+node cli.mjs sync-ai         # 按需在只读沙箱内扫描并增量翻译新版新增按钮
+node cli.mjs check           # 校验仓库零二进制文件与全部脚本/JSON 语法
+node cli.mjs uninstall       # 卸载服务并立即无损恢复原版英文界面
 ```
 
-Windows 用户也可直接双击仓库根目录的纯明文 `install.cmd` 完成安装；卸载与还原英文只需运行 `node cli.mjs uninstall`。
+## 架构与透明边界
 
----
+- **无侵入事件流挂载**：守护进程仅通过 `127.0.0.1` 建立单条持久化 CDP WebSocket（监听 `Page.frameNavigated` 与 `Runtime.bindingCalled`，空闲 CPU 约 `0.0%`），不触碰客户端安装目录与 `app.asar`。
+- **DOM 隔离与 `WeakMap` 还原**：严格跳过 Monaco 代码编辑器、集成终端、代码块与对话正文；通过 `WeakMap` 保存原始文本节点，切换语言或切回英文时内存级直接还原。
+- **冷启动端口补参（`autoRelaunchCdp: true`）**：Windows 自动为快捷方式补齐调试端口参数；若裸启动未带调试口，仅在进程刚启动 `<15s` 且无近期对话写入时发送温和关闭请求（`CloseMainWindow` / `SIGTERM`，绝不使用 `-Force` 或 `SIGKILL` 强杀）并带参重开一次，可在 `dict/config.json` 中设为 `false` 关闭。
+- **默认零采集与零越界配置**：`collectUntranslated`、`autoSyncAi`、`syncAiOutputLang` 默认全部为 `false`，默认安装不修改 `~/.gemini/config/` 下的任何规则或技能文件。
 
-## 工作原理与透明说明
+## 预置词库（15 套 × 2,065 条，含插件市场全量简介）
 
-- **冷启动调试端口补参机制（`autoRelaunchCdp: true`）**：Windows 安装时会自动为桌面/开始菜单快捷方式补齐 `--remote-debugging-port=0`（从快捷方式启动零重启）。若从其它入口裸启动且未带调试口，守护进程**仅在进程刚启动 `<15s`（`--updated` 更新重开 `<25s`）且最近 15 秒无对话数据库写入时**，发送温和关闭请求（`CloseMainWindow` / `SIGTERM`，**绝不使用 `-Force` 或 `SIGKILL` 强杀**；若窗口因未保存状态拒绝退出则立即豁免放行，绝不打断正在运行的 Agent 任务）并带参重开一次。如需关闭此行为，在 `dict/config.json` 中设 `"autoRelaunchCdp": false` 即可。
-- **长连接事件驱动 + 低频本地端口发现**：已挂载窗口走本地 CDP WebSocket 事件推送与 `fs.watch` 配置监听，仅保留 4 秒一次的本地 `127.0.0.1` 端口轻量检查以发现新开窗口（实测空闲 CPU 约 `0.0%`）。
-- **选择器适用边界**：因不修改 `app.asar`，界面挂载依赖工作台与设置卡片 DOM 选择器（含多级标题与字段回退）。常规版本更新无需重装；若未来大改版重构了设置页 DOM 结构，则需同步更新 `src/injector.js` 选择器（`sync-ai` 仅补新词条，不修补结构变更）。
-- **默认零采集、零改 AI 配置**：`collectUntranslated` 与 `autoSyncAi` 默认均为 `false`，默认安装也不写入 `~/.gemini/config/skills/`；手动执行 `node cli.mjs sync-ai` 时强制开启 `--mode plan --sandbox --disable-slash-commands` 并在系统临时目录隔离执行。
+`zh-CN` 简体中文 · `zh-SG` 简体中文（英文术语） · `zh-TW` 繁體中文 · `ja` 日本語 · `ko` 한국어 · `ru` Русский · `vi` Tiếng Việt · `hi` हिन्दी · `id` Bahasa Indonesia · `th` ภาษาไทย · `es` Español · `fr` Français · `de` Deutsch · `pt` Português · `it` Italiano
 
----
+## 许可协议
 
-## 开源许可与社区
-
-- 本项目采用 OSI 认证的 [GNU General Public License v3.0 (GPL-3.0)](../LICENSE) 开源许可协议。任何衍生修改或打包分发版本均须以相同 GPL-3.0 协议完整公开源代码。
-- 社区交流与反馈：感谢 **[LINUX DO](https://linux.do)** 社区的开源分享氛围与各位佬友的反馈支持。
+基于 [GNU General Public License v3.0 (GPL-3.0)](../LICENSE) 开源发布。感谢 [LINUX DO](https://linux.do) 社区的交流与反馈支持。

@@ -6,10 +6,63 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { PROJECT_ROOT } from './paths.mjs';
+import { normalizeLocaleCode } from './locales.mjs';
 
 export const PID_LOCK_FILE = path.join(os.tmpdir(), 'antigravity-langpack-daemon.pid');
 export const MAC_PLIST_LABEL = 'io.github.antigravity-langpack.daemon';
+export const AI_LANG_RULE_FILENAME = '99_antigravity_langpack_lang.md';
 const DAEMON_ENTRY = path.join(PROJECT_ROOT, 'src', 'daemon.mjs');
+
+const AI_OUTPUT_RULE_COPY = Object.freeze({
+  'zh-CN':
+    '请全程使用自然简练的简体中文进行内部思考推理（Thinking）、任务规划、工具步骤摘要（`toolSummary`）、子智能体角色命名及面向用户的回复；代码标识符、API 名称、命令行参数、文件路径与原始报错保持英文原样。',
+  'zh-SG':
+    '请全程使用简体中文进行内部思考推理（Thinking）、任务规划、工具步骤摘要与回复，同时自然保留常见英文技术术语（如 `Agent`、`Subagent`、`Artifact`、`Workspace`、`MCP`、API 与代码标识符）。',
+  'zh-TW':
+    '請全程使用自然流暢的繁體中文（台灣開發者慣用術語）進行內部思考推理（Thinking）、任務規劃、工具步驟摘要（`toolSummary`）與回覆；程式碼識別字、API 名稱、指令參數、檔案路徑與原始錯誤訊息保持英文原樣。',
+  ja: '内部の思考プロセス（Thinking）、計画、ツールのステップ要約（`toolSummary`）、およびユーザーへの回答はすべて自然な日本語で行ってください。コード識別子、API 名、CLI 引数、ファイルパス、元のエラーメッセージは英語のまま維持してください。',
+  ko: '내부 사고 과정(Thinking), 작업 계획, 도구 단계 요약(`toolSummary`) 및 사용자 응답은 모두 자연스러운 한국어로 작성하세요. 코드 식별자, API 이름, CLI 인자, 파일 경로 및 원본 오류 메시지는 영어 원문을 유지하세요.',
+  ru: 'Выполняйте внутренние рассуждения (Thinking), планирование, краткие описания шагов (`toolSummary`) и ответы пользователю полностью на естественном русском языке. Идентификаторы кода, имена API, аргументы CLI, пути к файлам и тексты ошибок оставляйте в оригинале.',
+  vi: 'Vui lòng sử dụng Tiếng Việt tự nhiên cho toàn bộ quá trình suy luận nội bộ (Thinking), lập kế hoạch, tóm tắt bước công cụ (`toolSummary`) và câu trả lời; giữ nguyên tiếng Anh cho tên biến, API, tham số CLI, đường dẫn tệp và thông báo lỗi gốc.',
+  hi: 'कृपया आंतरिक सोच (Thinking), योजना, टूल चरण सारांश (`toolSummary`) और उपयोगकर्ता उत्तरों के लिए स्वाभाविक हिन्दी का उपयोग करें; कोड पहचानकर्ता, API नाम, CLI तर्क, फ़ाइल पथ और मूल त्रुटि संदेश अंग्रेज़ी में ही रखें।',
+  id: 'Gunakan Bahasa Indonesia yang alami untuk seluruh proses berpikir internal (Thinking), perencanaan, ringkasan langkah alat (`toolSummary`), dan balasan pengguna; biarkan pengidentifikasi kode, nama API, argumen CLI, jalur file, dan pesan error asli tetap dalam bahasa Inggris.',
+  th: 'โปรดใช้ภาษาไทยที่เป็นธรรมชาติสำหรับกระบวนการคิดภายใน (Thinking) การวางแผน สรุปขั้นตอนเครื่องมือ (`toolSummary`) และการตอบกลับผู้ใช้ โดยคงตัวระบุโค้ด ชื่อ API อาร์กิวเมนต์ CLI เส้นทางไฟล์ และข้อความแสดงข้อผิดพลาดต้นฉบับไว้เป็นภาษาอังกฤษ',
+  es: 'Utiliza español natural en todo el razonamiento interno (Thinking), la planificación, los resúmenes de herramientas (`toolSummary`) y las respuestas al usuario; mantén en inglés los identificadores de código, nombres de API, rutas de archivos y errores originales.',
+  fr: 'Utilisez un français naturel pour l’ensemble du raisonnement interne (Thinking), la planification, les résumés d’étapes (`toolSummary`) et les réponses ; conservez en anglais les identifiants de code, noms d’API, chemins de fichiers et messages d’erreur bruts.',
+  de: 'Verwenden Sie für interne Überlegungen (Thinking), Planung, Werkzeug-Zusammenfassungen (`toolSummary`) und Antworten durchgängig natürliches Deutsch; belassen Sie Code-Bezeichner, API-Namen, Dateipfade und Original-Fehlermeldungen auf Englisch.',
+  pt: 'Use português natural em todo o raciocínio interno (Thinking), planejamento, resumos de etapas (`toolSummary`) e respostas ao usuário; mantenha identificadores de código, nomes de API, caminhos de arquivos e mensagens de erro originais em inglês.',
+  it: 'Usa un italiano naturale per tutto il ragionamento interno (Thinking), la pianificazione, i riepiloghi degli strumenti (`toolSummary`) e le risposte; mantieni in inglese gli identificatori di codice, i nomi delle API, i percorsi dei file e gli errori originali.'
+});
+
+export function syncAgentLanguageRule(localeCode = 'zh-CN', enabled = false, { customHome = '' } = {}) {
+  const home = customHome || os.homedir();
+  const rulesDir = path.join(home, '.gemini', 'config', 'rules');
+  const rulePath = path.join(rulesDir, AI_LANG_RULE_FILENAME);
+  const norm = normalizeLocaleCode(localeCode);
+
+  if (!enabled || norm === 'en' || !AI_OUTPUT_RULE_COPY[norm]) {
+    try {
+      if (fs.existsSync(rulePath)) fs.unlinkSync(rulePath);
+    } catch {}
+    return '';
+  }
+
+  const content = [
+    '<!-- antigravity-langpack:syncAiOutputLang -->',
+    `# AI Thinking & Output Language (${norm})`,
+    '',
+    `- ${AI_OUTPUT_RULE_COPY[norm]}`,
+    ''
+  ].join('\n');
+
+  try {
+    fs.mkdirSync(rulesDir, { recursive: true });
+    fs.writeFileSync(rulePath, content, 'utf8');
+    return rulePath;
+  } catch {
+    return '';
+  }
+}
 
 export function readDaemonPid() {
   try {

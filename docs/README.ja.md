@@ -1,83 +1,79 @@
 <div align="center">
 
-# antigravity-langpack — Google Antigravity 2.0 日本語化・多言語パック
+# antigravity-langpack
 
-**`app.asar` 非改変（macOS の公式署名を維持）・バイナリ（`.exe`）ゼロの Google Antigravity 2.0 / Insiders 対応ネイティブ UI 日本語化＆多言語切り替えツール（VS Code 日本語言語パックが効かない新エージェント UI に完全対応・全14ロケール収録）。**
+Google Antigravity（`Stable` & `Insiders`）向けプレーンテキスト・ネイティブ日本語化＆多言語パック。  
+`app.asar` 非改変・macOS 公式署名を維持したまま、全15ロケール（各 2,065 語・Marketplace 完全収録）を即時切り替え。
 
 <p>
   <a href="../README.md">English</a> ·
   <a href="./README.zh-CN.md">简体中文</a> ·
   <a href="./README.zh-TW.md">繁體中文</a> ·
   <b>日本語</b> ·
-  <a href="./README.ko.md">한국어</a>
+  <a href="./README.ko.md">한국어</a> ·
+  <a href="./README.ru.md">Русский</a>
 </p>
 
-<p align="center">
-  <img src="./demo.gif" width="840" alt="antigravity-langpack Native Display Language Switcher Demo" />
-</p>
+<img src="./demo.gif" width="840" alt="antigravity-langpack Appearance Switcher" />
 
 </div>
 
----
+## 画面プレビュー（ワークスペース・Marketplace 完全日本語化・全15言語）
 
-## 従来の日本語化パッチ（`app.asar` 書き換え方式）との違い
+<p align="center">
+  <img src="./assets/bento-ja.png" width="880" alt="日本語ワークスペースと Marketplace プレビュー" />
+</p>
 
-1. **macOS の Gatekeeper・キーチェーンに完全対応（`app.asar` 非改変）**：
-   `/Applications/Antigravity.app` 本体のファイルを一切書き換えません。Google 公式の Apple 公証署名がそのまま維持されるため、**「アプリが壊れているため開けません」警告やキーチェーンのパスワード要求が発生しません**。
-2. **通常の自動アップデート後も再パッチ不要**：
-   `Antigravity`（Stable）および `Antigravity - Insiders` の通常のアップデートに追従し、毎回手動でパッチを当て直す手間がありません。
-3. **「設定 → 外観」から再起動なしで即時言語切り替え**：
-   公式 UI と同じデザインの **「表示言語 (Display Language)」** ドロップダウンを `設定 → 外観` に組み込みます。ワンクリックで **日本語（1,920語収録・VS Code 日本語版準拠の自然なカタカナ用語）** と英語（Original English）や全14ロケールをその場で切り替えられます。
-4. **バイナリ（`.exe`）ゼロ・外部 npm 依存ゼロ・管理者権限（`sudo`）不要**：
-   すべて監査可能なプレーンテキストの JavaScript（Node.js >= 22.13 標準 API のみ）で構成されています。コードエディタ・ターミナル・チャット本文は一切改変しません。
-5. **オンデマンドの読み取り専用 AI 差分翻訳（デフォルト無効）**：
-   1,920語の完全辞書を標準同梱しているため、バックグラウンドでの未翻訳テキスト収集や自動 AI 呼び出しは**デフォルトでオフ**になっています。新バージョンで未翻訳ラベルが追加された場合は、手動で `node cli.mjs sync-ai` を実行することで読み取り専用サンドボックス経由で `dict/learned.ja.json` を補完できます。
+<p align="center">
+  <img src="./assets/locales-gallery.png" width="880" alt="全15ロケール プレビュー" />
+</p>
 
----
+## インストール
 
-## クイックスタート（macOS / Windows / Linux）
+管理者権限・`sudo` は不要です。システムに `Node.js >= 22.13` がない場合は、公式 `nodejs.org` から SHA-256 検証済みのポータブル実行環境を `.runtime/` に自動構成します。
 
-### 方法 A：AI エージェントに1行貼るだけで自動導入（おすすめ）
+```bash
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/CHANPAJN/antigravity-langpack/main/install.sh | sh -s -- --lang ja
+```
 
-Antigravity や Claude Code のチャット欄に以下の1行を貼り付けるだけで自動セットアップされます（詳細：[AI_INSTALL.md](../AI_INSTALL.md)）：
+```powershell
+# Windows (PowerShell)
+$env:AGY_LANG='ja'; irm https://raw.githubusercontent.com/CHANPAJN/antigravity-langpack/main/install.ps1 | iex
+```
+
+**AI エージェントで1行セットアップ**（Antigravity / Claude Code に貼り付け・詳細 [AI_INSTALL.md](../AI_INSTALL.md)）
 
 ```text
 https://github.com/CHANPAJN/antigravity-langpack/blob/main/AI_INSTALL.md を読んで、Antigravity を日本語化（ja）してください。
 ```
 
-### 方法 B：コマンドで手動インストール
-
-公式 **Node.js >= 22.13.0** が必要です（管理者権限や `sudo` は不要です）。
+**手動クローン**
 
 ```bash
 git clone https://github.com/CHANPAJN/antigravity-langpack.git
 cd antigravity-langpack
-
-# 日本語を初期言語としてインストール
 node cli.mjs install --lang ja
-
-# macOS オプション：起動時からデバッグポートを付与する純シェルスクリプト製 Dock ランチャーを作成
-node cli.mjs install --lang ja --mac-launcher
-
-# オプション：アップデート時の新規英語ラベル自動差分翻訳を有効化（後から `node cli.mjs auto-sync on/off` でも切替可能）
-node cli.mjs install --lang ja --auto-sync
-
-# オプション：チャット内同期スキル（~/.gemini/config/skills/）を明示的に追加する場合
-node cli.mjs install --lang ja --with-skill
 ```
 
-- **アプリ内での切り替え**：`設定 (Settings) → 外観 (Appearance) → 表示言語` からいつでも変更可能。
-- **アンインストール（公式英語 UI に即時復元）**：`node cli.mjs uninstall`
+## 使い方・CLI
 
----
+**`設定 (Settings) → 外観 (Appearance)`** から再起動なしで **「表示言語」** を切り替えられます。直下の **「AI の思考と回答言語を同期」** スイッチ（既定オフ）をオンにすると、思考プロセスや回答言語も自動で同期します。
 
-## 動作の仕組みと透明性について
+```bash
+node cli.mjs status          # デーモン状態・接続ポートの確認
+node cli.mjs lang ja         # 表示言語の即時切り替え（en で英語に復元）
+node cli.mjs ai-lang on      # AI 思考・回答言語同期の有効化（off で無効化）
+node cli.mjs sync-ai         # 新規追加ラベルのオンデマンド差分翻訳（読み取り専用サンドボックス）
+node cli.mjs uninstall       # アンインストールと英語 UI への即時復元
+```
 
-- **起動時のデバッグポート自動付与（`autoRelaunchCdp: true`）**：`--remote-debugging-port=0` なしで起動された場合、デーモンは**起動直後（15秒未満）かつ直近の会話書き込みがない新規プロセスに限り**、通常の終了要求（`CloseMainWindow` / `SIGTERM` のみを使用し、強制終了 `-Force` / `SIGKILL` は一切行いません。未保存確認等で閉じない場合は即座に対象外として保護します）を送ってポート付きで1回だけ再起動します。`dict/config.json` で `"autoRelaunchCdp": false` に変更すると無効化できます。
-- **セレクタの適用範囲とプライバシー**：接続済みウィンドウは CDP WebSocket イベント駆動（＋4秒間隔のローカルポート確認）で動作します。将来クライアント側の大型アップデートで設定画面の DOM 構造自体が大きく刷新された場合は、`src/injector.js` のセレクタ更新が必要になります。また、デフォルトでは `~/.gemini/config/skills/` への書き込みやバックグラウンド収集は一切行いません。
+## アーキテクチャと透明性
 
----
+- **非改変イベント駆動**：`127.0.0.1` の永続 CDP WebSocket（`Page.frameNavigated` / `Runtime.bindingCalled`、待機時 CPU 約 `0.0%`）のみで動作し、本体ファイルを一切書き換えません。
+- **DOM 分離と `WeakMap` 復元**：Monaco エディタ・ターミナル・コードブロック・チャット本文には干渉せず、`WeakMap` により再起動なしで即時復元します。
+- **オプトイン設計**：未翻訳語収集・自動 AI 翻訳・AI 言語ルール同期はすべてデフォルト `false` です。起動時ポート付与（`autoRelaunchCdp`）は起動直後 15 秒未満の新規プロセスにのみ通常の終了要求（強制終了なし）を行います。
 
 ## ライセンス
 
-OSI 承認オープンソースライセンスである [GNU General Public License v3.0 (GPL-3.0)](../LICENSE) の下で公開されています。
+[GNU General Public License v3.0 (GPL-3.0)](../LICENSE) の下で公開されています。

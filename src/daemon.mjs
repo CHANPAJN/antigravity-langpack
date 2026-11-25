@@ -16,7 +16,7 @@ import {
   writeConfigFile
 } from './paths.mjs';
 import { createRelaunchMonitor } from './relaunch.mjs';
-import { PID_LOCK_FILE, readDaemonPid } from './service.mjs';
+import { PID_LOCK_FILE, readDaemonPid, syncAgentLanguageRule } from './service.mjs';
 
 const SYNC_INTERVAL_MS = 4000;
 const DISCOVERY_INTERVAL_MS = 4000;
@@ -304,9 +304,15 @@ export async function runDaemonLoop({ once = false } = {}) {
     switching = true;
     try {
       while (queuedLocale) {
-        const targetLoc = queuedLocale;
+        const targetAction = queuedLocale;
         queuedLocale = '';
-        writeConfigFile({ locale: targetLoc });
+        let updatedCfg;
+        if (targetAction === '__ai_lang__:on' || targetAction === '__ai_lang__:off') {
+          updatedCfg = writeConfigFile({ syncAiOutputLang: targetAction.endsWith(':on') });
+        } else {
+          updatedCfg = writeConfigFile({ locale: targetAction });
+        }
+        syncAgentLanguageRule(updatedCfg.locale, updatedCfg.syncAiOutputLang === true);
         builder.refreshIfNeeded();
         const tasks = [];
         for (const s of sessions.values()) {
@@ -325,6 +331,9 @@ export async function runDaemonLoop({ once = false } = {}) {
     ticks = (ticks + 1) % 10000;
     try {
       const { changed, config } = builder.refreshIfNeeded();
+      if (changed) {
+        syncAgentLanguageRule(config.locale, config.syncAiOutputLang === true);
+      }
       const now = Date.now();
       const needDiscovery = once || changed || sessions.size === 0 || now - lastDiscoveryMs >= DISCOVERY_INTERVAL_MS;
 
