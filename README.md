@@ -2,10 +2,10 @@
 
 # antigravity-langpack
 
-Plain-text native UI localization pack for **Google Antigravity 2.0 (`Stable` & `Insiders`)** and **`Antigravity IDE`** on macOS, Windows, and Linux.  
-One lightweight daemon syncs matching VS Code host language packs (where available) and live-translates the embedded **Agent side panel, Antigravity Settings & inline actions** that standard language packs miss — zero `app.asar` modification, intact macOS Apple notarization, and 15 offline locale packs (2,110 entries each).
+Plain-text native UI localization pack for **Google Antigravity (Stable & Insiders)** and **Antigravity IDE** on macOS, Windows, and Linux.  
+One lightweight daemon syncs matching VS Code host language packs (where available) and live-translates the embedded **Agent side panel, Antigravity Settings, Swarm board & inline actions** that standard language packs miss — zero app.asar modification, intact macOS Apple notarization, and 15 offline locale packs (2,125 entries each).
 
-<sub>Google Antigravity 2.0 日本語化 · 한글화 / 한국어 패치 · Русификатор · 中文汉化 · 繁體中文化 · Giao diện Tiếng Việt · Español · Français · Deutsch · Português · Italiano</sub>
+<sub>Google Antigravity 2.x 日本語化 · 한글화 / 한국어 패치 · Русификатор · 中文汉化 · 繁體中文化 · Giao diện Tiếng Việt · Español · Français · Deutsch · Português · Italiano</sub>
 
 <p>
   <b>English</b> ·
@@ -17,6 +17,7 @@ One lightweight daemon syncs matching VS Code host language packs (where availab
 </p>
 
 <p>
+  <img src="https://img.shields.io/badge/Antigravity-2.35%2B%20%26%20IDE-10B981?style=flat-square" alt="Compatible with Antigravity 2.35+ and IDE" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="GPL-3.0 License" /></a>
   <a href="https://linux.do"><img src="https://img.shields.io/badge/Community-LINUX%20DO-1C1C1E?style=flat-square&logo=linux&logoColor=34D399" alt="LINUX DO Community" /></a>
 </p>
@@ -77,7 +78,7 @@ Open **`Settings → Appearance`** inside Antigravity to access two native contr
 
 ```bash
 node cli.mjs status          # Inspect daemon PID, active locale, and connected ports
-node cli.mjs lang            # List all 15 bundled locale packs (2,110 entries each)
+node cli.mjs lang            # List all 15 bundled locale packs (2,125 entries each)
 node cli.mjs lang ru         # Switch UI locale immediately (`en` restores English)
 node cli.mjs ai-lang on      # Opt-in: sync AI thinking & reply language (`off` to disable)
 node cli.mjs sync-ai         # On-demand sandboxed translation for newly added upstream strings
@@ -87,13 +88,13 @@ node cli.mjs uninstall       # Remove autostart and restore original English UI 
 
 ## How It Works & Operational Transparency
 
-- **Unified 2.0 + Antigravity IDE Coverage**: A single background daemon attaches to `Stable`, `Insiders`, and `Antigravity IDE` simultaneously — syncing matching official VS Code host language packs (`argv.json` + `languagepacks.json`, where available) while live-translating the embedded Agent side panel, standalone `Antigravity Settings` frame, and inline diff/completion buttons.
-- **Event-Driven Local CDP Stream**: Connects over `127.0.0.1` via a single persistent WebSocket (`Page.frameNavigated` & `Runtime.bindingCalled`, `~0.0%` idle CPU) plus `fs.watch` on `dict/`. Never touches `/Applications/Antigravity.app`, `Program Files`, or `app.asar`.
+- **Unified Antigravity + Antigravity IDE Coverage**: A single background daemon attaches to `Stable`, `Insiders`, and `Antigravity IDE` simultaneously — syncing matching official VS Code host language packs (`argv.json` + `languagepacks.json`, where available) while live-translating the embedded Agent side panel, standalone `Antigravity Settings` frame, `Swarm` board, and inline diff/completion buttons.
+- **Event-Driven Local CDP Stream**: Connects over `127.0.0.1` via a single persistent WebSocket (`Page.frameNavigated`, `Target.targetCreated` & `Runtime.bindingCalled`, `~0.0%` idle CPU) plus `fs.watch` on `dict/`. Never touches `/Applications/Antigravity.app`, `Program Files`, or `app.asar`.
 - **DOM Isolation & `WeakMap` Restoration**: Skips Monaco code editors, file explorer trees, open editor tabs, Git branch status, integrated terminals, code blocks, and chat messages. Original `TextNode` values are tracked in a `WeakMap` for instant in-memory switching and restoration.
 - **Cold-Start Debug Port Relay (`autoRelaunchCdp: true`)**: On Windows, `install` appends `--remote-debugging-port=0` to user shortcuts. If launched bare without a debugging port, the daemon only intercepts newly started processes (`<15s` old, `<25s` after `--updated`) with no recent conversation writes, sends a graceful close (`CloseMainWindow` / `SIGTERM` — never force-kill), and relaunches once with `--remote-debugging-port=0`. Set `"autoRelaunchCdp": false` in `dict/config.json` to disable.
 - **Strict Opt-In Defaults**: `collectUntranslated`, `autoSyncAi`, and `syncAiOutputLang` are all `false` by default, and `install` does not write to `~/.gemini/config/` unless explicitly requested (`--with-skill` or `--sync-ai-lang`).
 
-## Bundled Locales (15 Packs × 2,110 Entries · Full Marketplace Catalog)
+## Bundled Locales (15 Packs × 2,125 Entries · Full Marketplace & Swarm Coverage)
 
 - **East & South/Southeast Asia**: `zh-CN` (简体中文) · `zh-SG` (简体中文 · English Tech Terms) · `zh-TW` (繁體中文) · `ja` (日本語) · `ko` (한국어) · `vi` (Tiếng Việt) · `th` (ภาษาไทย) · `id` (Bahasa Indonesia) · `hi` (हिन्दी)
 - **Europe & Americas**: `ru` (Русский) · `es` (Español) · `fr` (Français) · `de` (Deutsch) · `pt` (Português) · `it` (Italiano)

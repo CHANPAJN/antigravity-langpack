@@ -21,7 +21,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: '查看更多「{0}」',
     pluginsIn: '「{0}」分类下的插件',
     filterSkillsRules: '筛选技能与规则：{0}',
-    fixWithAgent: '交给智能体修复：{0}'
+    fixWithAgent: '交给智能体修复：{0}',
+    plusMore: '另有 {0} 项',
+    xOfYDone: '已完成 {0}/{1}',
+    waitingOnMember: '等待 @{0}',
+    workingForMember: '协助 @{0}'
   },
   'zh-TW': {
     justNow: '剛剛',
@@ -40,11 +44,19 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: '在「{0}」中查看更多',
     pluginsIn: '「{0}」分類下的外掛程式',
     filterSkillsRules: '篩選技能與規則：{0}',
-    fixWithAgent: '使用 AI 代理修復：{0}'
+    fixWithAgent: '使用 AI 代理修復：{0}',
+    plusMore: '另有 {0} 項',
+    xOfYDone: '已完成 {0}/{1}',
+    waitingOnMember: '等待 @{0}',
+    workingForMember: '協助 @{0}'
   },
   'zh-SG': {
     justNow: '刚刚',
-    fixWithAgent: '使用 Agent 修复：{0}'
+    fixWithAgent: '使用 Agent 修复：{0}',
+    plusMore: '+{0} 项',
+    xOfYDone: '已完成 {0}/{1}',
+    waitingOnMember: '等待 @{0}',
+    workingForMember: '协助 @{0}'
   },
   ja: {
     justNow: 'たった今',
@@ -63,7 +75,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: '「{0}」をもっと見る',
     pluginsIn: '「{0}」のプラグイン',
     filterSkillsRules: 'スキルとルールを絞り込み: {0}',
-    fixWithAgent: 'エージェントで修正: {0}'
+    fixWithAgent: 'エージェントで修正: {0}',
+    plusMore: '他 {0} 件',
+    xOfYDone: '{0}/{1} 完了',
+    waitingOnMember: '@{0} を待機中',
+    workingForMember: '@{0} を支援中'
   },
   ko: {
     justNow: '방금',
@@ -82,7 +98,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: '{0} 더 보기',
     pluginsIn: '{0} 플러그인',
     filterSkillsRules: '스킬 및 규칙 필터: {0}',
-    fixWithAgent: '에이전트로 수정: {0}'
+    fixWithAgent: '에이전트로 수정: {0}',
+    plusMore: '+{0}개 더보기',
+    xOfYDone: '{0}/{1} 완료',
+    waitingOnMember: '@{0} 대기 중',
+    workingForMember: '@{0} 지원 중'
   },
   ru: {
     justNow: 'только что',
@@ -101,7 +121,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: 'Ещё в категории «{0}»',
     pluginsIn: 'Плагины в категории «{0}»',
     filterSkillsRules: 'Фильтр навыков и правил: {0}',
-    fixWithAgent: 'Исправить с помощью агента: {0}'
+    fixWithAgent: 'Исправить с помощью агента: {0}',
+    plusMore: 'ещё +{0}',
+    xOfYDone: 'выполнено {0} из {1}',
+    waitingOnMember: 'ожидание @{0}',
+    workingForMember: 'помощь @{0}'
   },
   vi: {
     justNow: 'vừa xong',
@@ -120,7 +144,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: 'Xem thêm trong {0}',
     pluginsIn: 'Plugin trong {0}',
     filterSkillsRules: 'Lọc kỹ năng và quy tắc: {0}',
-    fixWithAgent: 'Sửa bằng Agent: {0}'
+    fixWithAgent: 'Sửa bằng Agent: {0}',
+    plusMore: '+{0} mục khác',
+    xOfYDone: 'Hoàn thành {0}/{1}',
+    waitingOnMember: 'Đang chờ @{0}',
+    workingForMember: 'Hỗ trợ @{0}'
   },
   hi: {
     justNow: 'अभी',
@@ -139,7 +167,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: '{0} में और देखें',
     pluginsIn: '{0} में प्लगइन',
     filterSkillsRules: 'स्किल्स और नियम फ़िल्टर करें: {0}',
-    fixWithAgent: 'एजेंट से ठीक करें: {0}'
+    fixWithAgent: 'एजेंट से ठीक करें: {0}',
+    plusMore: '+{0} और',
+    xOfYDone: '{1} में से {0} पूर्ण',
+    waitingOnMember: '@{0} की प्रतीक्षा',
+    workingForMember: '@{0} के लिए कार्यरत'
   },
   id: {
     justNow: 'baru saja',
@@ -158,7 +190,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: 'Lihat lainnya di {0}',
     pluginsIn: 'Plugin di {0}',
     filterSkillsRules: 'Filter keahlian dan aturan: {0}',
-    fixWithAgent: 'Perbaiki dengan Agen: {0}'
+    fixWithAgent: 'Perbaiki dengan Agen: {0}',
+    plusMore: '+{0} lainnya',
+    xOfYDone: '{0}/{1} selesai',
+    waitingOnMember: 'Menunggu @{0}',
+    workingForMember: 'Membantu @{0}'
   },
   th: {
     justNow: 'เมื่อสักครู่',
@@ -177,7 +213,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: 'ดูเพิ่มเติมใน {0}',
     pluginsIn: 'ปลั๊กอินใน {0}',
     filterSkillsRules: 'กรองทักษะและกฎ: {0}',
-    fixWithAgent: 'แก้ไขด้วยเอเจนต์: {0}'
+    fixWithAgent: 'แก้ไขด้วยเอเจนต์: {0}',
+    plusMore: 'อีก +{0}',
+    xOfYDone: 'เสร็จแล้ว {0}/{1}',
+    waitingOnMember: 'รอ @{0}',
+    workingForMember: 'ช่วยงาน @{0}'
   },
   es: {
     justNow: 'ahora mismo',
@@ -196,7 +236,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: 'Ver más en {0}',
     pluginsIn: 'Complementos en {0}',
     filterSkillsRules: 'Filtrar habilidades y reglas: {0}',
-    fixWithAgent: 'Corregir con el agente: {0}'
+    fixWithAgent: 'Corregir con el agente: {0}',
+    plusMore: '+{0} más',
+    xOfYDone: '{0} de {1} completados',
+    waitingOnMember: 'Esperando a @{0}',
+    workingForMember: 'Colaborando con @{0}'
   },
   fr: {
     justNow: 'à l’instant',
@@ -215,7 +259,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: 'Voir plus dans {0}',
     pluginsIn: 'Extensions dans {0}',
     filterSkillsRules: 'Filtrer les compétences et règles : {0}',
-    fixWithAgent: 'Corriger avec l’agent : {0}'
+    fixWithAgent: 'Corriger avec l’agent : {0}',
+    plusMore: '+{0} de plus',
+    xOfYDone: '{0} sur {1} terminés',
+    waitingOnMember: 'En attente de @{0}',
+    workingForMember: 'En appui de @{0}'
   },
   de: {
     justNow: 'gerade eben',
@@ -234,7 +282,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: 'Mehr anzeigen in {0}',
     pluginsIn: 'Plugins in {0}',
     filterSkillsRules: 'Skills und Regeln filtern: {0}',
-    fixWithAgent: 'Mit Agent beheben: {0}'
+    fixWithAgent: 'Mit Agent beheben: {0}',
+    plusMore: '+{0} weitere',
+    xOfYDone: '{0} von {1} erledigt',
+    waitingOnMember: 'Wartet auf @{0}',
+    workingForMember: 'Arbeitet für @{0}'
   },
   pt: {
     justNow: 'agora mesmo',
@@ -253,7 +305,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: 'Ver mais em {0}',
     pluginsIn: 'Plugins em {0}',
     filterSkillsRules: 'Filtrar habilidades e regras: {0}',
-    fixWithAgent: 'Corrigir com o agente: {0}'
+    fixWithAgent: 'Corrigir com o agente: {0}',
+    plusMore: '+{0} mais',
+    xOfYDone: '{0} de {1} concluídos',
+    waitingOnMember: 'Aguardando @{0}',
+    workingForMember: 'Apoiando @{0}'
   },
   it: {
     justNow: 'proprio ora',
@@ -272,7 +328,11 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     seeMoreIn: 'Vedi altro in {0}',
     pluginsIn: 'Plugin in {0}',
     filterSkillsRules: 'Filtra competenze e regole: {0}',
-    fixWithAgent: 'Correggi con l’agente: {0}'
+    fixWithAgent: 'Correggi con l’agente: {0}',
+    plusMore: 'altri +{0}',
+    xOfYDone: '{0} su {1} completati',
+    waitingOnMember: 'In attesa di @{0}',
+    workingForMember: 'In supporto a @{0}'
   }
 };
 

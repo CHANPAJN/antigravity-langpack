@@ -2108,5 +2108,20 @@
   "Optimized for you": "आपके लिए अनुकूलित",
   "Help us improve Antigravity.": "Antigravity को बेहतर बनाने में हमारी मदद करें।",
   "Google Privacy Policy": "Google गोपनीयता नीति",
-  "Stay up to date.": "नवीनतम अपडेट प्राप्त करें।"
+  "Stay up to date.": "नवीनतम अपडेट प्राप्त करें।",
+  "Coordinator": "समन्वयक",
+  "You are this swarm's stall monitor": "आप इस समूह के गतिरोध मॉनिटर हैं",
+  "Active": "सक्रिय",
+  "Resting": "विश्राम में",
+  "Retired": "पूर्ण",
+  "Goal": "लक्ष्य",
+  "Threads": "कार्य सूत्र",
+  "Progress": "प्रगति",
+  "Stuck": "अटका हुआ",
+  "Hive": "हाइव दृश्य",
+  "Threads as cells, with each worker where it works": "प्रत्येक कार्यकर्ता के कार्यस्थान के साथ कक्षों में सूत्र",
+  "overview · from the narrator’s notes": "अवलोकन · कथावाचक के नोट्स से",
+  "Narrator’s page": "कथावाचक पृष्ठ",
+  "Right-click image to save, or open in a new tab.": "छवि सहेजने के लिए राइट-क्लिक करें, या नए टैब में खोलें।",
+  "Model quota exhausted": "मॉडल कोटा समाप्त हो गया है"
 }

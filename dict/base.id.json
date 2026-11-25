@@ -2108,5 +2108,20 @@
   "Optimized for you": "Dioptimalkan untuk Anda",
   "Help us improve Antigravity.": "Bantu kami meningkatkan Antigravity.",
   "Google Privacy Policy": "Kebijakan Privasi Google",
-  "Stay up to date.": "Tetap dapatkan info terbaru."
+  "Stay up to date.": "Tetap dapatkan info terbaru.",
+  "Coordinator": "Koordinator",
+  "You are this swarm's stall monitor": "Memantau kemacetan pada grup kolaborasi ini",
+  "Active": "Aktif",
+  "Resting": "Siaga",
+  "Retired": "Selesai",
+  "Goal": "Tujuan",
+  "Threads": "Alur Kerja",
+  "Progress": "Progres",
+  "Stuck": "Macet",
+  "Hive": "Tampilan Hive",
+  "Threads as cells, with each worker where it works": "Alur kerja sebagai sel beserta posisi tiap pekerja",
+  "overview · from the narrator’s notes": "ringkasan · dari catatan narator",
+  "Narrator’s page": "Halaman narator",
+  "Right-click image to save, or open in a new tab.": "Klik kanan gambar untuk menyimpan, atau buka di tab baru.",
+  "Model quota exhausted": "Kuota model telah habis"
 }

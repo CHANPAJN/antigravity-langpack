@@ -2108,5 +2108,20 @@
   "Optimized for you": "あなた向けに最適化",
   "Help us improve Antigravity.": "Antigravity の改善にご協力ください。",
   "Google Privacy Policy": "Google プライバシー ポリシー",
-  "Stay up to date.": "最新情報を受け取る。"
+  "Stay up to date.": "最新情報を受け取る。",
+  "Coordinator": "コーディネーター",
+  "You are this swarm's stall monitor": "この Swarm の停滞モニターを担当しています",
+  "Active": "稼働中",
+  "Resting": "待機中",
+  "Retired": "終了済み",
+  "Goal": "目標",
+  "Threads": "スレッド",
+  "Progress": "進捗",
+  "Stuck": "停滞中",
+  "Hive": "ハイブ表示",
+  "Threads as cells, with each worker where it works": "スレッドをセルとして各ワーカーの稼働場所を表示",
+  "overview · from the narrator’s notes": "概要 · ナレーターの記録より",
+  "Narrator’s page": "ナレーターのページ",
+  "Right-click image to save, or open in a new tab.": "右クリックで画像を保存するか、新しいタブで開きます。",
+  "Model quota exhausted": "モデル利用枠の上限に達しました"
 }

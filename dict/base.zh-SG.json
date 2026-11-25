@@ -2108,5 +2108,20 @@
   "Optimized for you": "为你量身定制",
   "Help us improve Antigravity.": "帮助我们改进 Antigravity。",
   "Google Privacy Policy": "Google 隐私权政策",
-  "Stay up to date.": "获取最新动态。"
+  "Stay up to date.": "获取最新动态。",
+  "Coordinator": "Coordinator（协调员）",
+  "You are this swarm's stall monitor": "当前负责监控此 Swarm 的停滞状态",
+  "Active": "活跃中",
+  "Resting": "休眠中",
+  "Retired": "已退场",
+  "Goal": "目标",
+  "Threads": "工作线",
+  "Progress": "整体进度",
+  "Stuck": "已卡住",
+  "Hive": "Hive 视图",
+  "Threads as cells, with each worker where it works": "按工作线分组展示各 Worker 所在位置",
+  "overview · from the narrator’s notes": "概览 · 来自摘要员的记录",
+  "Narrator’s page": "摘要员视图",
+  "Right-click image to save, or open in a new tab.": "右键点击图片保存，或在新标签页中打开。",
+  "Model quota exhausted": "模型配额已用尽"
 }

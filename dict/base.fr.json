@@ -2108,5 +2108,20 @@
   "Optimized for you": "Optimisé pour vous",
   "Help us improve Antigravity.": "Aidez-nous à améliorer Antigravity.",
   "Google Privacy Policy": "Règles de confidentialité Google",
-  "Stay up to date.": "Restez informé."
+  "Stay up to date.": "Restez informé.",
+  "Coordinator": "Coordinateur",
+  "You are this swarm's stall monitor": "Surveille les blocages de cet essaim",
+  "Active": "Actif",
+  "Resting": "Au repos",
+  "Retired": "Terminé",
+  "Goal": "Objectif",
+  "Threads": "Fils de travail",
+  "Progress": "Progression",
+  "Stuck": "Bloqué",
+  "Hive": "Vue Ruche",
+  "Threads as cells, with each worker where it works": "Fils sous forme de cellules avec chaque agent à son poste",
+  "overview · from the narrator’s notes": "aperçu · d’après les notes du narrateur",
+  "Narrator’s page": "Page du narrateur",
+  "Right-click image to save, or open in a new tab.": "Faites un clic droit sur l’image pour l’enregistrer ou ouvrez-la dans un nouvel onglet.",
+  "Model quota exhausted": "Quota du modèle épuisé"
 }

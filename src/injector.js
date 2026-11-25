@@ -480,6 +480,18 @@
     if (pat.fixWithAgent && (m = trimmed.match(/^Fix with Agent:\s*(.+)$/i))) {
       return fillTpl(pat.fixWithAgent, { 0: m[1].trim() });
     }
+    if (pat.plusMore && (m = trimmed.match(/^\+(\d+)\s+more$/i))) {
+      return fillTpl(pat.plusMore, { 0: m[1] });
+    }
+    if (pat.xOfYDone && (m = trimmed.match(/^(\d+)\s+of\s+(\d+)(?:\s+tasks?)?\s+done$/i))) {
+      return fillTpl(pat.xOfYDone, { 0: m[1], 1: m[2] });
+    }
+    if (pat.waitingOnMember && (m = trimmed.match(/^Waiting on\s+@([A-Za-z0-9_-]+)$/i))) {
+      return fillTpl(pat.waitingOnMember, { 0: m[1] });
+    }
+    if (pat.workingForMember && (m = trimmed.match(/^Working for\s+@([A-Za-z0-9_-]+)$/i))) {
+      return fillTpl(pat.workingForMember, { 0: m[1] });
+    }
 
     if (/^(?:Explored|Edited|Ran)\b/i.test(trimmed)) {
       const parts = trimmed.split(/,\s*/);
@@ -967,6 +979,9 @@
       if (!trimmed || KEEP_UNTRANSLATED_EXACT.has(trimmed)) return null;
 
       let baseLookup = dict[trimmed];
+      if (typeof baseLookup !== 'string' && trimmed.includes('’')) {
+        baseLookup = dict[trimmed.replace(/’/g, "'")];
+      }
       if (typeof baseLookup !== 'string' && trimmed.includes(' ') && trimmed.length >= 4 && trimmed.length <= 80) {
         baseLookup = lowerMultiWordDict[trimmed.toLowerCase()];
       }

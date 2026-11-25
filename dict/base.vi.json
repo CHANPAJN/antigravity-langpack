@@ -2108,5 +2108,20 @@
   "Optimized for you": "Tối ưu hóa cho riêng bạn",
   "Help us improve Antigravity.": "Giúp chúng tôi cải thiện Antigravity.",
   "Google Privacy Policy": "Chính sách quyền riêng tư của Google",
-  "Stay up to date.": "Cập nhật thông tin mới nhất."
+  "Stay up to date.": "Cập nhật thông tin mới nhất.",
+  "Coordinator": "Điều phối viên",
+  "You are this swarm's stall monitor": "Phụ trách giám sát trạng thái treo của nhóm này",
+  "Active": "Đang hoạt động",
+  "Resting": "Đang nghỉ",
+  "Retired": "Đã kết thúc",
+  "Goal": "Mục tiêu",
+  "Threads": "Luồng công việc",
+  "Progress": "Tiến độ",
+  "Stuck": "Bị kẹt",
+  "Hive": "Chế độ Tổ ong",
+  "Threads as cells, with each worker where it works": "Hiển thị các luồng dưới dạng ô cùng vị trí làm việc của từng thành viên",
+  "overview · from the narrator’s notes": "tổng quan · từ ghi chú của người tóm tắt",
+  "Narrator’s page": "Trang tóm tắt",
+  "Right-click image to save, or open in a new tab.": "Nhấp chuột phải vào ảnh để lưu hoặc mở trong thẻ mới.",
+  "Model quota exhausted": "Đã hết hạn mức mô hình"
 }

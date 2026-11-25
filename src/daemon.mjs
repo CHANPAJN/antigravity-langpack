@@ -102,7 +102,7 @@ export function evaluateOnTarget(wsUrl, expression, timeoutMs = 3000) {
   });
 }
 
-function createPersistentSession(target, channelInfo, getScriptState, onLocaleRequested) {
+function createPersistentSession(target, channelInfo, getScriptState, onLocaleRequested, onSubTargetCreated) {
   return new Promise((resolveConn) => {
     let resolved = false;
     const complete = (entry) => {
@@ -178,6 +178,8 @@ function createPersistentSession(target, channelInfo, getScriptState, onLocaleRe
             if (requested) onLocaleRequested?.(requested);
           } else if (msg.method === 'Page.frameNavigated' && !msg.params?.frame?.parentId) {
             setTimeout(() => ensureMounted().catch(() => {}), 150);
+          } else if (msg.method === 'Target.targetCreated' && msg.params?.targetInfo?.type === 'iframe') {
+            onSubTargetCreated?.();
           }
         } catch {}
       });
@@ -209,6 +211,9 @@ function createPersistentSession(target, channelInfo, getScriptState, onLocaleRe
         if (!isWorkbench) {
           ws.close();
           return complete(null);
+        }
+        if (target.type === 'page') {
+          callCdp('Target.setDiscoverTargets', { discover: true }).catch(() => {});
         }
         await callCdp('Runtime.addBinding', { name: BINDING_NAME });
         await applyBundle();
@@ -265,7 +270,17 @@ export async function runDaemonLoop({ once = false } = {}) {
   let syncing = false;
   let autoAiRunning = false;
   let lastDiscoveryMs = 0;
+  let subTargetTimer = null;
   let ticks = 0;
+
+  const notifySubTargetCreated = () => {
+    lastDiscoveryMs = 0;
+    if (subTargetTimer) return;
+    subTargetTimer = setTimeout(() => {
+      subTargetTimer = null;
+      tick().catch(() => {});
+    }, 80);
+  };
 
   async function maybeTriggerBackgroundAiSync(config) {
     if (autoAiRunning || config.enabled === false || config.autoSyncAi !== true || config.locale === 'en') return;
@@ -378,7 +393,8 @@ export async function runDaemonLoop({ once = false } = {}) {
               page,
               chInfo,
               () => builder.getCurrent(),
-              (loc) => broadcastImmediateLocaleSwitch(loc).catch(() => {})
+              (loc) => broadcastImmediateLocaleSwitch(loc).catch(() => {}),
+              notifySubTargetCreated
             );
             if (created) sessions.set(page.id, created);
           }

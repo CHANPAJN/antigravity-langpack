@@ -2108,5 +2108,20 @@
   "Optimized for you": "Оптимизировано для вас",
   "Help us improve Antigravity.": "Помогите нам улучшить Antigravity.",
   "Google Privacy Policy": "Политика конфиденциальности Google",
-  "Stay up to date.": "Будьте в курсе обновлений."
+  "Stay up to date.": "Будьте в курсе обновлений.",
+  "Coordinator": "Координатор",
+  "You are this swarm's stall monitor": "Отслеживает зависания этого роя агентов",
+  "Active": "Активен",
+  "Resting": "В ожидании",
+  "Retired": "Завершён",
+  "Goal": "Цель",
+  "Threads": "Потоки задач",
+  "Progress": "Прогресс",
+  "Stuck": "Завис",
+  "Hive": "Улей",
+  "Threads as cells, with each worker where it works": "Потоки в виде ячеек с исполнителями внутри",
+  "overview · from the narrator’s notes": "обзор · по заметкам хроникёра",
+  "Narrator’s page": "Страница хроникёра",
+  "Right-click image to save, or open in a new tab.": "Нажмите правой кнопкой мыши, чтобы сохранить изображение, или откройте в новой вкладке.",
+  "Model quota exhausted": "Квота модели исчерпана"
 }

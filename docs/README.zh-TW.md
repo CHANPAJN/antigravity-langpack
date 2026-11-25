@@ -2,8 +2,8 @@
 
 # antigravity-langpack
 
-**Google Antigravity 2.0（`Stable` & `Insiders`）** 與 **`Antigravity IDE`** 純文字原生多語系介面包。  
-同一個輕量背景服務按所選語系自動同步對應之 IDE 外殼語言包，並將官方語言包未涵蓋的**右側 Agent 面板、Antigravity Settings 專屬設定頁與行內 Diff/補全按鈕**即時在地化——免改 `app.asar`、保留 macOS 官方公證簽章，內建 15 套離線詞庫（每套 2,110 條）。
+**Google Antigravity（Stable & Insiders）** 與 **Antigravity IDE** 純文字原生多語系介面包。  
+同一個輕量背景服務按所選語系自動同步對應之 IDE 外殼語言包，並將官方語言包未涵蓋的**右側 Agent 面板、Antigravity Settings 專屬設定頁、Swarm 協作看板與行內 Diff/補全按鈕**即時在地化——免改 app.asar、保留 macOS 官方公證簽章，內建 15 套離線詞庫（每套 2,125 條）。
 
 <p>
   <a href="../README.md">English</a> ·
@@ -12,6 +12,11 @@
   <a href="./README.ja.md">日本語</a> ·
   <a href="./README.ko.md">한국어</a> ·
   <a href="./README.ru.md">Русский</a>
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Antigravity-2.35%2B%20%26%20IDE-10B981?style=flat-square" alt="Antigravity 2.35+ & IDE" />
+  <a href="../LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="GPL-3.0 License" /></a>
 </p>
 
 <img src="./demo.gif" width="840" alt="antigravity-langpack Appearance Switcher" />

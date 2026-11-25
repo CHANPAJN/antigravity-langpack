@@ -2,8 +2,8 @@
 
 # antigravity-langpack
 
-**Google Antigravity 2.0（`Stable` & `Insiders`）** および **`Antigravity IDE`** 向けプレーンテキスト・ネイティブ日本語化＆多言語パック。  
-単一の軽量デーモンが IDE 外殻の公式言語パック同期と、標準言語パックでは翻訳されない**右側の Agent パネル・Antigravity Settings・インライン操作ボタン**のリアルタイム翻訳を一括処理。`app.asar` 非改変・macOS 公式署名を維持し、全15ロケール（各 2,110 語・Marketplace 完全収録）を即時切り替え。
+**Google Antigravity（Stable & Insiders）** および **Antigravity IDE** 向けプレーンテキスト・ネイティブ日本語化＆多言語パック。  
+単一の軽量デーモンが IDE 外殻の公式言語パック同期と、標準言語パックでは翻訳されない**右側の Agent パネル・Antigravity Settings・Swarm ボード・インライン操作ボタン**のリアルタイム翻訳を一括処理。app.asar 非改変・macOS 公式署名を維持し、全15ロケール（各 2,125 語・Marketplace 完全収録）を即時切り替え。
 
 <p>
   <a href="../README.md">English</a> ·
@@ -12,6 +12,11 @@
   <b>日本語</b> ·
   <a href="./README.ko.md">한국어</a> ·
   <a href="./README.ru.md">Русский</a>
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Antigravity-2.35%2B%20%26%20IDE-10B981?style=flat-square" alt="Antigravity 2.35+ & IDE" />
+  <a href="../LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="GPL-3.0 License" /></a>
 </p>
 
 <img src="./demo.gif" width="840" alt="antigravity-langpack Appearance Switcher" />

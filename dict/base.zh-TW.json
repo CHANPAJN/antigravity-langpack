@@ -2108,5 +2108,20 @@
   "Optimized for you": "為你量身打造",
   "Help us improve Antigravity.": "協助我們改進 Antigravity。",
   "Google Privacy Policy": "Google 隱私權政策",
-  "Stay up to date.": "掌握最新動態。"
+  "Stay up to date.": "掌握最新動態。",
+  "Coordinator": "協調員",
+  "You are this swarm's stall monitor": "目前負責監控此協作群的停滯狀態",
+  "Active": "運作中",
+  "Resting": "休眠中",
+  "Retired": "已退場",
+  "Goal": "目標",
+  "Threads": "工作線",
+  "Progress": "整體進度",
+  "Stuck": "已卡住",
+  "Hive": "協作檢視",
+  "Threads as cells, with each worker where it works": "依工作線分組顯示各協作者所在位置",
+  "overview · from the narrator’s notes": "概覽 · 來自摘要員的紀錄",
+  "Narrator’s page": "摘要員頁面",
+  "Right-click image to save, or open in a new tab.": "按右鍵儲存圖片，或在新分頁中開啟。",
+  "Model quota exhausted": "模型配額已用盡"
 }

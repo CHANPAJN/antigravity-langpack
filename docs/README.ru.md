@@ -2,8 +2,8 @@
 
 # antigravity-langpack
 
-Нативный текстовый языковой пакет и русификатор для **Google Antigravity 2.0 (`Stable` и `Insiders`)** и **`Antigravity IDE`**.  
-Один лёгкий фоновый демон синхронизирует официальный языковой пакет оболочки IDE и переводит встроенную **боковую панель Agent, настройки Antigravity Settings и инлайн-кнопки** — без модификации `app.asar`, с сохранением подписи macOS · 15 офлайн-локалей по 2 110 строк.
+Нативный текстовый языковой пакет и русификатор для **Google Antigravity (Stable и Insiders)** и **Antigravity IDE**.  
+Один лёгкий фоновый демон синхронизирует официальный языковой пакет оболочки IDE и переводит встроенную **боковую панель Agent, настройки Antigravity Settings, панель Swarm и инлайн-кнопки** — без модификации app.asar, с сохранением подписи macOS · 15 офлайн-локалей по 2 125 строк.
 
 <p>
   <a href="../README.md">English</a> ·
@@ -12,6 +12,11 @@
   <a href="./README.ja.md">日本語</a> ·
   <a href="./README.ko.md">한국어</a> ·
   <b>Русский</b>
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Antigravity-2.35%2B%20%26%20IDE-10B981?style=flat-square" alt="Antigravity 2.35+ & IDE" />
+  <a href="../LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="GPL-3.0 License" /></a>
 </p>
 
 <img src="./demo.gif" width="840" alt="antigravity-langpack Appearance Switcher" />

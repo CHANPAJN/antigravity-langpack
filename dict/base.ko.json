@@ -2108,5 +2108,20 @@
   "Optimized for you": "사용자 맞춤형 최적화",
   "Help us improve Antigravity.": "Antigravity 개선에 참여해 주세요.",
   "Google Privacy Policy": "Google 개인정보처리방침",
-  "Stay up to date.": "최신 소식을 받아보세요."
+  "Stay up to date.": "최신 소식을 받아보세요.",
+  "Coordinator": "코디네이터",
+  "You are this swarm's stall monitor": "이 협업 그룹의 지연 모니터를 담당합니다",
+  "Active": "활성",
+  "Resting": "대기 중",
+  "Retired": "종료됨",
+  "Goal": "목표",
+  "Threads": "스레드",
+  "Progress": "진행률",
+  "Stuck": "지연됨",
+  "Hive": "하이브 보기",
+  "Threads as cells, with each worker where it works": "스레드별 셀에 각 작업자의 위치 표시",
+  "overview · from the narrator’s notes": "개요 · 내레이터 노트 기반",
+  "Narrator’s page": "내레이터 페이지",
+  "Right-click image to save, or open in a new tab.": "마우스 오른쪽 클릭으로 이미지를 저장하거나 새 탭에서 여세요.",
+  "Model quota exhausted": "모델 할당량이 소진되었습니다"
 }
