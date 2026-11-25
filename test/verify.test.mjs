@@ -724,3 +724,37 @@ test('2-in-1 Antigravity IDE channel discovery, JSONC argv.json patching & langu
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });
+
+test('install.ps1 & install.sh remain pure ASCII/clean and detect existing Node >= 22.13 without triggering fallback download (Issue #1)', () => {
+  const ps1Path = path.join(PROJECT_ROOT, 'install.ps1');
+  const shPath = path.join(PROJECT_ROOT, 'install.sh');
+  const ps1Text = fs.readFileSync(ps1Path, 'utf8');
+  const shText = fs.readFileSync(shPath, 'utf8');
+
+  assert.equal(/[^\x00-\x7F]/.test(ps1Text), false, 'install.ps1 must stay strictly ASCII');
+  assert.equal(ps1Text.includes('Start-Process -FilePath $NodeExe -ArgumentList'), false);
+  assert.ok(shText.includes('Setting up repository in $DEFAULT_INSTALL_DIR ..." >&2'));
+
+  if (process.platform === 'win32') {
+    const tmpRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'agi18n-ps1-'));
+    try {
+      const cmd = [
+        '$env:AGY_INSTALLER_IMPORT_ONLY = "1"',
+        `. '${ps1Path.replace(/'/g, "''")}'`,
+        `$ok = Test-NodeVersionOk '${process.execPath.replace(/'/g, "''")}'`,
+        `$resolved = Resolve-NodeBinary '${tmpRepo.replace(/'/g, "''")}'`,
+        'Write-Output ("OK=" + $ok + ";RESOLVED=" + $resolved)'
+      ].join('; ');
+      const run = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', cmd], {
+        encoding: 'utf8',
+        windowsHide: true,
+        timeout: 8000
+      });
+      assert.equal(run.status, 0, run.stderr || run.stdout);
+      assert.match(run.stdout, /OK=True;RESOLVED=.+node\.exe/i);
+      assert.equal(fs.existsSync(path.join(tmpRepo, '.runtime')), false, 'Must not create .runtime when system Node >= 22.13 exists');
+    } finally {
+      fs.rmSync(tmpRepo, { recursive: true, force: true });
+    }
+  }
+});

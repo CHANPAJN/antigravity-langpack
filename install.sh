@@ -27,7 +27,7 @@ resolve_repo_dir() {
     return 0
   fi
 
-  echo "[antigravity-langpack] Setting up repository in $DEFAULT_INSTALL_DIR ..."
+  echo "[antigravity-langpack] Setting up repository in $DEFAULT_INSTALL_DIR ..." >&2
   if [ -d "$DEFAULT_INSTALL_DIR/.git" ]; then
     git -C "$DEFAULT_INSTALL_DIR" pull --ff-only >/dev/null 2>&1 || true
     printf '%s\n' "$DEFAULT_INSTALL_DIR"
@@ -36,7 +36,7 @@ resolve_repo_dir() {
 
   if command -v git >/dev/null 2>&1; then
     rm -rf "$DEFAULT_INSTALL_DIR"
-    git clone --depth 1 "$REPO_URL" "$DEFAULT_INSTALL_DIR"
+    git clone --depth 1 "$REPO_URL" "$DEFAULT_INSTALL_DIR" >&2
     printf '%s\n' "$DEFAULT_INSTALL_DIR"
     return 0
   fi
@@ -88,10 +88,14 @@ ensure_node_binary() {
   mkdir -p "$rt_dir"
   tmp_pkg="$rt_dir/$pkg_name"
   tmp_sums="$rt_dir/SHASUMS256.txt"
+  rm -f "$tmp_pkg" "$tmp_sums"
 
   echo "[antigravity-langpack] Node.js >= 22.13 not found in PATH; downloading official ${pkg_name} (verified via SHASUMS256) ..." >&2
-  curl -fsSL "${base_url}/SHASUMS256.txt" -o "$tmp_sums"
-  curl -fsSL "${base_url}/${pkg_name}" -o "$tmp_pkg"
+  if ! curl -fsSL "${base_url}/SHASUMS256.txt" -o "$tmp_sums" || ! curl -fsSL "${base_url}/${pkg_name}" -o "$tmp_pkg"; then
+    rm -f "$tmp_pkg" "$tmp_sums"
+    echo "[ERROR] Failed to download official Node.js runtime archive" >&2
+    exit 1
+  fi
 
   expected_sha="$(awk -v f="$pkg_name" '$2 == f || $2 == ("*" f) { print $1; exit }' "$tmp_sums")"
   if [ -z "$expected_sha" ]; then
