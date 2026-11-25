@@ -2,7 +2,7 @@
 
 # antigravity-langpack — Google Antigravity 2.0 日本語化・多言語パック
 
-**`app.asar` 非改変（macOS の公式署名を維持）・バイナリ（`.exe`）ゼロの Google Antigravity / Insiders 対応ネイティブ UI 日本語化＆多言語切り替えツール（13言語・14ロケール収録）。**
+**`app.asar` 非改変（macOS の公式署名を維持）・バイナリ（`.exe`）ゼロの Google Antigravity 2.0 / Insiders 対応ネイティブ UI 日本語化＆多言語切り替えツール（VS Code 日本語言語パックが効かない新エージェント UI に完全対応・全14ロケール収録）。**
 
 <p>
   <a href="../README.md">English</a> ·
@@ -36,6 +36,16 @@
 ---
 
 ## クイックスタート（macOS / Windows / Linux）
+
+### 方法 A：AI エージェントに1行貼るだけで自動導入（おすすめ）
+
+Antigravity や Claude Code のチャット欄に以下の1行を貼り付けるだけで自動セットアップされます（詳細：[AI_INSTALL.md](../AI_INSTALL.md)）：
+
+```text
+https://github.com/CHANPAJN/antigravity-langpack/blob/main/AI_INSTALL.md を読んで、Antigravity を日本語化（ja）してください。
+```
+
+### 方法 B：コマンドで手動インストール
 
 公式 **Node.js >= 22.13.0** が必要です（管理者権限や `sudo` は不要です）。
 

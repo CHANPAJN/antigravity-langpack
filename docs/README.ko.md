@@ -1,8 +1,8 @@
 <div align="center">
 
-# antigravity-langpack — Google Antigravity 2.0 한국어 패치 · 다국어 팩
+# antigravity-langpack — Google Antigravity 2.0 한글화 · 한국어 패치 · 다국어 팩
 
-**`app.asar` 무개조(macOS 공식 서명 유지) · `.exe` 바이너리 제로 기반의 Google Antigravity / Insiders 네이티브 한국어 및 다국어(13개 언어 · 14개 로케일) 전환 도구.**
+**`app.asar` 무개조(macOS 공식 서명 유지) · `.exe` 바이너리 제로 기반의 Google Antigravity 2.0 / Insiders 네이티브 UI 한글화 및 다국어(VS Code 한국어 언어팩이 적용되지 않는 신규 에이전트 UI 완벽 지원 · 14개 로케일) 전환 도구.**
 
 <p>
   <a href="../README.md">English</a> ·
@@ -34,6 +34,16 @@
 ---
 
 ## 빠른 설치 (macOS / Windows / Linux)
+
+### 방법 A — AI 에이전트 프롬프트 한 줄로 자동 설치 (추천)
+
+Antigravity나 Claude Code 채팅창에 아래 문장만 붙여넣으면 자동으로 설치 및 한국어 전환이 완료됩니다 ([AI_INSTALL.md](../AI_INSTALL.md) 참조):
+
+```text
+https://github.com/CHANPAJN/antigravity-langpack/blob/main/AI_INSTALL.md 문서를 읽고 Antigravity 한국어 패치(ko)를 설치해 줘.
+```
+
+### 방법 B — 터미널 수동 설치
 
 공식 **Node.js >= 22.13.0** 환경이 필요합니다.
 

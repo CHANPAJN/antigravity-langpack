@@ -4,6 +4,8 @@
 
 **Zero-binary, zero-ASAR-patch multi-language UI pack (13 languages / 14 locales) for Google Antigravity (`Antigravity` & `Antigravity - Insiders`) on macOS, Windows, and Linux.**
 
+<sub>Google Antigravity 2.0 日本語化 · 한글화 / 한국어 패치 · 中文汉化 · 繁體中文化 · Giao diện Tiếng Việt · Español · Français · Deutsch</sub>
+
 <p>
   <b>English</b> ·
   <a href="./docs/README.zh-CN.md">简体中文</a> ·
@@ -65,6 +67,16 @@ Unlike `app.asar` binary patchers or compiled `.exe` wrappers, **`antigravity-la
 ---
 
 ## Quick Start (Zero Admin / Zero `sudo`)
+
+### Option A — One-Prompt AI Setup (Fastest)
+
+Paste this single line into **Antigravity, Claude Code, Codex, or Cursor** and let your agent install it automatically (see [AI_INSTALL.md](./AI_INSTALL.md)):
+
+```text
+Read https://github.com/CHANPAJN/antigravity-langpack/blob/main/AI_INSTALL.md and install antigravity-langpack for my language (e.g. ja / ko / zh-CN / vi / es / fr / de).
+```
+
+### Option B — Manual CLI Install
 
 Requires official **Node.js >= 22.13.0**.
 
