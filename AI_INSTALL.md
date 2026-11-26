@@ -40,7 +40,7 @@ This guide allows any AI coding agent (**Google Antigravity, Claude Code, Codex,
    node cli.mjs check
    node cli.mjs install --lang <locale>
    ```
-   Supported `<locale>` codes (15 packs, 2,125 entries each — covers Stable, Insiders & Antigravity IDE): `ja`, `ko`, `ru`, `zh-CN`, `zh-SG`, `zh-TW`, `vi`, `es`, `fr`, `de`, `pt`, `it`, `th`, `id`, `hi`.
+   Supported `<locale>` codes (15 packs, 2,865 entries each — covers Stable, Insiders & Antigravity IDE): `ja`, `ko`, `ru`, `zh-CN`, `zh-SG`, `zh-TW`, `vi`, `es`, `fr`, `de`, `pt`, `it`, `th`, `id`, `hi`.
    - On **macOS**, if the user launches Antigravity or Antigravity IDE from the Dock, offer `--mac-launcher` (`node cli.mjs install --lang <locale> --mac-launcher`) so `--remote-debugging-port=0` is passed cleanly without touching `/Applications/Antigravity.app` or Apple code signatures.
    - Do **not** pass `--auto-sync` or `--with-skill` unless the user explicitly asks for them.
 3. **Verify Status & Report:**

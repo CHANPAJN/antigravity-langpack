@@ -3,7 +3,7 @@
  * Zero external dependencies, WeakMap restoration, instant CDP binding switch.
  */
 (() => {
-  const SKIP_CONTAINER_SEL = [
+  const HARD_SKIP_CONTAINER_SEL = [
     'code',
     'pre',
     'kbd',
@@ -21,9 +21,6 @@
     '.breadcrumbs-below-tabs',
     '#status\\.scm',
     '.xterm',
-    '.prose',
-    '.markdown',
-    '[data-markdown-root]',
     '[data-testid="user-message-content"]',
     '[data-testid="conversation-row-sidebar"] a[href^="/c/"]',
     '[data-testid="conversation-row-sidebar"] span.truncate',
@@ -33,6 +30,8 @@
     '[data-testid="breadcrumb-segment"]',
     '[data-agi18n-ignore="true"]'
   ].join(', ');
+
+  const MARKDOWN_CONTAINER_SEL = '.prose, .markdown, [data-markdown-root]';
 
   const SKIP_FORM_PARENT_SEL = [
     '.monaco-editor',
@@ -45,6 +44,18 @@
     '[data-markdown-root]',
     '[data-testid="user-message-content"]'
   ].join(', ');
+
+  const PROTECTED_ENTITY_NAME_SEL = [
+    '[data-testid="branch-pill-trigger"]',
+    '[data-testid="project-branch-picker"]',
+    '[data-testid="project-selector-trigger"]',
+    '[data-testid="workspace-name"]',
+    '[data-testid="sidebar-project-title"]',
+    '[data-testid="sidebar-group-title"]'
+  ].join(', ');
+
+  const SKIP_NATIVE_MENU_ID_RE =
+    /^(?:project-(?!new$|remove$)|group-(?!new$|remove$)|workspace-(?!new$|remove$)|branch-|recent-item-|message-timestamp$)/i;
 
   const KEEP_UNTRANSLATED_EXACT = new Set([
     'Minimal',
@@ -344,6 +355,9 @@
     if ((m = trimmed.match(/^Show\s+(\d+)\s+more\s+subagents?$/i))) return fillTpl(pat.showMoreSubagents, { 0: m[1] });
     if (pat.showBreakdowns && (m = trimmed.match(/^Show\s+(\d+)\s+breakdowns?$/i))) return fillTpl(pat.showBreakdowns, { 0: m[1] });
     if (pat.hideBreakdowns && (m = trimmed.match(/^Hide\s+(\d+)\s+breakdowns?$/i))) return fillTpl(pat.hideBreakdowns, { 0: m[1] });
+    if (pat.stepsShowPlan && (m = trimmed.match(/^(\d+)\/(\d+)\s+steps?\.\s*Show plan\.?$/i))) {
+      return fillTpl(pat.stepsShowPlan, { 0: m[1], 1: m[2] });
+    }
     if (pat.stepsProgress && (m = trimmed.match(/^(\d+)\/(\d+)\s+steps?$/i))) return fillTpl(pat.stepsProgress, { 0: m[1], 1: m[2] });
     if (pat.tokenCategoryCount && (m = trimmed.match(/^(Rules|Skills|Mcp Tools|MCP Tools|System|Conversation|Context|Tools|Memory|Files):\s*([\d,]+)\s*tokens?$/i))) {
       const catKey = m[1].trim();
@@ -411,6 +425,9 @@
         if (mon) return fillTpl(pat.updatedDate, { mon, day: m[2], time: m[3] });
       }
       return fillTpl(pat.updatedTime, { time: m[3] });
+    }
+    if (pat.selectModelAfterTurn && (m = trimmed.match(/^Select model,\s*current:\s*(.+?)\.\s*Applies to \/btw and messages sent after this turn\.?$/i))) {
+      return fillTpl(pat.selectModelAfterTurn, { 0: m[1].trim() });
     }
     if (pat.selectModelCurrent && (m = trimmed.match(/^Select model,\s*current:\s*(.+)$/i))) {
       return fillTpl(pat.selectModelCurrent, { 0: m[1].trim() });
@@ -491,6 +508,70 @@
     }
     if (pat.workingForMember && (m = trimmed.match(/^Working for\s+@([A-Za-z0-9_-]+)$/i))) {
       return fillTpl(pat.workingForMember, { 0: m[1] });
+    }
+    if (pat.stepsCount && (m = trimmed.match(/^(\d+)\s+steps?$/i))) {
+      return fillTpl(pat.stepsCount, { 0: m[1] });
+    }
+    if (pat.moveToGroupNamed && (m = trimmed.match(/^Move to Group:\s*(.+)$/i))) {
+      return fillTpl(pat.moveToGroupNamed, { 0: m[1].trim() });
+    }
+    if (pat.removeFromRecent && (m = trimmed.match(/^Remove\s+(.+?)\s+from\s+Recent$/i))) {
+      return fillTpl(pat.removeFromRecent, { 0: m[1].trim() });
+    }
+    if (pat.systemDefaultApp && (m = trimmed.match(/^System default\s*\((.+)\)$/i))) {
+      return fillTpl(pat.systemDefaultApp, { 0: m[1].trim() });
+    }
+    if (pat.suffixDefault && trimmed.endsWith(' (Default)') && trimmed.length > 10) {
+      const base = trimmed.slice(0, -10).trim();
+      const locBase = lookupTerm(base);
+      return fillTpl(pat.suffixDefault, { 0: locBase });
+    }
+    if (pat.suffixExperimental && /^.+\s+\(experimental\)$/i.test(trimmed) && trimmed.length > 15) {
+      const base = trimmed.replace(/\s+\(experimental\)$/i, '').trim();
+      const locBase = lookupTerm(base);
+      return fillTpl(pat.suffixExperimental, { 0: locBase });
+    }
+    if (
+      pat.fileSizeLimit &&
+      (m = trimmed.match(
+        /^File exceeds the (\d+(?:\.\d+)?)MB display limit \((\d+(?:\.\d+)?)MB\),\s*so it can't be opened or downloaded here\.?$/i
+      ))
+    ) {
+      return fillTpl(pat.fileSizeLimit, { 0: m[1], 1: m[2] });
+    }
+    if (
+      pat.modelRemovedOnDate &&
+      (m = trimmed.match(/^(.+?)\s+will be removed from Antigravity on\s+([A-Za-z]{3,9})\s+(\d{1,2}),\s*(\d{4})\.?$/i))
+    ) {
+      const monNum = MONTH_INDEX[m[2].slice(0, 3).toLowerCase()];
+      if (monNum) {
+        return fillTpl(pat.modelRemovedOnDate, { model: m[1].trim(), year: m[4], mon: monNum, day: m[3] });
+      }
+    }
+    if (pat.turnsSuffix && (m = trimmed.match(/^(.+?),\s*(\d+)\s+turns?$/i)) && /\d{1,2}:\d{2}/.test(m[1])) {
+      return fillTpl(pat.turnsSuffix, { 0: m[1].trim(), 1: m[2] });
+    }
+    if (pat.threadsOpen && (m = trimmed.match(/^(\d+)\s+threads?\s+open$/i))) {
+      return fillTpl(pat.threadsOpen, { 0: m[1] });
+    }
+    if (pat.postsCount && (m = trimmed.match(/^(\d+)\s+posts?$/i))) {
+      return fillTpl(pat.postsCount, { 0: m[1] });
+    }
+    if (pat.overDuration && (m = trimmed.match(/^over\s+([0-9smhd]+(?:\s+\d+[smhd])*)$/i))) {
+      return fillTpl(pat.overDuration, { 0: formatDurationLocalized(m[1], pat) });
+    }
+    if (pat.leavingOnDate && (m = trimmed.match(/^(?:(.+?)\.\s+)?Leaving on\s+([A-Za-z]{3,9})\s+(\d{1,2})(\.)?$/i))) {
+      const monKey = m[2].slice(0, 3).toLowerCase();
+      const monNum = MONTH_INDEX[monKey];
+      if (monNum) {
+        const tail = fillTpl(pat.leavingOnDate, { mon: monNum, day: m[3] });
+        if (!m[1]) return tail;
+        const prefixDot = `${m[1].trim()}.`;
+        const locPrefix = dict[prefixDot] || lookupTerm(m[1].trim());
+        const cleanPrefix = locPrefix.replace(/[。.]+$/, '');
+        const sep = pat.sentenceJoiner || ' ';
+        return `${cleanPrefix}${sep}${tail}`;
+      }
     }
 
     if (/^(?:Explored|Edited|Ran)\b/i.test(trimmed)) {
@@ -593,12 +674,24 @@
     const skipCache = new WeakMap();
 
     let observer = null;
+    let subObserver = null;
+    let observedSubBody = null;
+    let subFrameLoadTarget = null;
+    let subFrameLoadListener = null;
     let rafId = 0;
     let timerId = 0;
     let clickRafId = 0;
     let clickTimerId = 0;
     let outsideMenuListener = null;
+    let nativeMenuTriggerListener = null;
+    let nativeMenuKeyListener = null;
+    let menuHookTimerId = 0;
+    let menuHookActive = false;
     const dirtyNodes = new Set();
+    const hasOwn = Object.prototype.hasOwnProperty;
+    const hasNativeContextMenu = typeof window.electronNative?.showContextMenu === 'function';
+    const origArrayMap = window.__AGI18N_ORIG_ARRAY_MAP__ || Array.prototype.map;
+    window.__AGI18N_ORIG_ARRAY_MAP__ = origArrayMap;
 
     window.__AGI18N_PENDING_LOCALE__ = '';
 
@@ -932,7 +1025,8 @@
 
     function restoreDom(root = document.body) {
       if (!root) return;
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      const docRef = root.ownerDocument || document;
+      const walker = docRef.createTreeWalker(root, NodeFilter.SHOW_TEXT);
       while (walker.nextNode()) {
         const tNode = walker.currentNode;
         const saved = textOrigMap.get(tNode);
@@ -957,14 +1051,38 @@
       }
     }
 
-    function isSkippedElement(el) {
-      if (!el || el.nodeType !== 1) return true;
-      if (skipCache.get(el) === true) return true;
-      if (el.closest(SKIP_CONTAINER_SEL)) {
-        if (el.isConnected) skipCache.set(el, true);
-        return true;
+    function isInsideNotificationToast(el) {
+      let cur = el;
+      for (let depth = 0; cur && depth < 7; depth++, cur = cur.parentElement) {
+        if (typeof cur.getAttribute === 'function') {
+          const role = cur.getAttribute('role');
+          if (role === 'status' || role === 'alert') return true;
+        }
+        if (typeof cur.querySelector === 'function' && cur.children && cur.children.length <= 5) {
+          if (
+            cur.querySelector(
+              '[aria-label="Dismiss notification"], [data-agi18n-orig-aria-label="Dismiss notification"]'
+            )
+          ) {
+            return true;
+          }
+        }
       }
       return false;
+    }
+
+    function isSkippedElement(el) {
+      if (!el || el.nodeType !== 1) return true;
+      const cached = skipCache.get(el);
+      if (cached !== undefined) return cached;
+      let skip = false;
+      if (el.closest(HARD_SKIP_CONTAINER_SEL)) {
+        skip = true;
+      } else if (el.closest(MARKDOWN_CONTAINER_SEL)) {
+        skip = !isInsideNotificationToast(el);
+      }
+      if (el.isConnected) skipCache.set(el, skip);
+      return skip;
     }
 
     function recordUntranslated(trimmed, contextEl) {
@@ -977,6 +1095,14 @@
       if (!raw) return null;
       const trimmed = raw.trim();
       if (!trimmed || KEEP_UNTRANSLATED_EXACT.has(trimmed)) return null;
+      if (
+        contextEl &&
+        typeof contextEl.closest === 'function' &&
+        !/\s/.test(trimmed) &&
+        contextEl.closest(PROTECTED_ENTITY_NAME_SEL)
+      ) {
+        return null;
+      }
 
       let baseLookup = dict[trimmed];
       if (typeof baseLookup !== 'string' && trimmed.includes('’')) {
@@ -1073,7 +1199,8 @@
       }
 
       processElementAttributes(root);
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+      const docRef = root.ownerDocument || document;
+      const walker = docRef.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
         acceptNode(node) {
           if (node.nodeType === 1) {
             if (isSkippedElement(node)) {
@@ -1144,14 +1271,146 @@
       }, 90);
     }
 
+    function isNativeMenuDescriptorEntry(item) {
+      if (!item || typeof item !== 'object' || item.constructor !== Object) return false;
+      if (item.type === 'separator') return true;
+      if ('$$typeof' in item) return false;
+      if (!hasOwn.call(item, 'accelerator')) return false;
+      if (typeof item.label !== 'string' && item.label !== undefined) return false;
+      return (
+        (hasOwn.call(item, 'checked') && hasOwn.call(item, 'disabled') && !('onClick' in item)) ||
+        (hasOwn.call(item, 'click') && hasOwn.call(item, 'enabled') && typeof item.click === 'function')
+      );
+    }
+
+    function localizeNativeMenuArray(arr, seen) {
+      if (!Array.isArray(arr) || arr.length === 0 || arr.length > 80) return arr;
+      if (seen.has(arr)) return arr;
+      let probe = null;
+      for (let i = 0; i < arr.length; i++) {
+        const cand = arr[i];
+        if (!cand || typeof cand !== 'object' || cand.constructor !== Object) return arr;
+        if (cand.type === 'separator') continue;
+        probe = cand;
+        break;
+      }
+      if (!probe || !isNativeMenuDescriptorEntry(probe)) return arr;
+      seen.add(arr);
+      for (let i = 0; i < arr.length; i++) {
+        const entry = arr[i];
+        if (!entry || !isNativeMenuDescriptorEntry(entry)) continue;
+        if (Array.isArray(entry.submenu) && entry.submenu.length > 0) {
+          localizeNativeMenuArray(entry.submenu, seen);
+        }
+        if (typeof entry.label === 'string' && entry.label) {
+          const itemId = entry.id ? String(entry.id) : '';
+          if (itemId && SKIP_NATIVE_MENU_ID_RE.test(itemId)) continue;
+          const next = translateRawString(entry.label, null);
+          if (typeof next === 'string' && next) {
+            entry.label = next;
+          }
+        }
+      }
+      return arr;
+    }
+
+    const seenMenuArrays = new WeakSet();
+    const patchedArrayMap = function map(callback, thisArg) {
+      const res = origArrayMap.call(this, callback, thisArg);
+      if (!enabled || !Array.isArray(res) || res.length === 0 || res.length > 80) return res;
+      return localizeNativeMenuArray(res, seenMenuArrays);
+    };
+
+    function disarmNativeMenuHook() {
+      if (menuHookTimerId) {
+        clearTimeout(menuHookTimerId);
+        menuHookTimerId = 0;
+      }
+      if (menuHookActive) {
+        menuHookActive = false;
+        if (Array.prototype.map === patchedArrayMap) {
+          Object.defineProperty(Array.prototype, 'map', {
+            value: origArrayMap,
+            writable: true,
+            configurable: true,
+            enumerable: false
+          });
+        }
+      }
+    }
+
+    function armNativeMenuHook() {
+      if (!enabled || !hasNativeContextMenu) return;
+      if (!menuHookActive) {
+        menuHookActive = true;
+        Object.defineProperty(Array.prototype, 'map', {
+          value: patchedArrayMap,
+          writable: true,
+          configurable: true,
+          enumerable: false
+        });
+      }
+      if (menuHookTimerId) clearTimeout(menuHookTimerId);
+      menuHookTimerId = setTimeout(disarmNativeMenuHook, 160);
+    }
+
+    function bindObserverCallback(mutations) {
+      let sawElementAdd = false;
+      for (const m of mutations) {
+        if (m.type === 'characterData') {
+          if (enabled) dirtyNodes.add(m.target);
+        } else if (m.type === 'attributes') {
+          if (enabled) processElementAttributes(m.target);
+        } else if (m.type === 'childList') {
+          for (const added of m.addedNodes) {
+            if (added.nodeType === 1) sawElementAdd = true;
+            if (enabled && (added.nodeType === 1 || added.nodeType === 3)) dirtyNodes.add(added);
+          }
+        }
+      }
+      if (dirtyNodes.size > 0 || sawElementAdd) scheduleFlush();
+    }
+
+    function getObserveOptions() {
+      return enabled
+        ? {
+            childList: true,
+            subtree: true,
+            characterData: true,
+            attributes: true,
+            attributeFilter: ['title', 'placeholder', 'aria-label']
+          }
+        : {
+            childList: true,
+            subtree: true
+          };
+    }
+
     function localizeSameOriginWebviewChild() {
       if (!isVscodeWebviewFrame) return;
       try {
         const sub = document.getElementById('active-frame');
+        if (sub && sub !== subFrameLoadTarget) {
+          if (subFrameLoadTarget && subFrameLoadListener) {
+            subFrameLoadTarget.removeEventListener('load', subFrameLoadListener);
+          }
+          subFrameLoadTarget = sub;
+          subFrameLoadListener = () => localizeSameOriginWebviewChild();
+          sub.addEventListener('load', subFrameLoadListener);
+        }
         const subBody = sub?.contentDocument?.body;
         if (!subBody) return;
-        if (!enabled) restoreDom(subBody);
-        else walkAndLocalize(subBody);
+        if (!enabled) {
+          restoreDom(subBody);
+        } else {
+          walkAndLocalize(subBody);
+          if (subBody !== observedSubBody) {
+            if (subObserver) subObserver.disconnect();
+            subObserver = new MutationObserver(bindObserverCallback);
+            subObserver.observe(subBody, getObserveOptions());
+            observedSubBody = subBody;
+          }
+        }
       } catch {}
     }
 
@@ -1164,6 +1423,29 @@
       }
       localizeSameOriginWebviewChild();
       ensureAppearanceLanguageRow();
+
+      if (enabled && hasNativeContextMenu) {
+        nativeMenuTriggerListener = (ev) => {
+          if (ev.type === 'contextmenu' || ev.button === 2) {
+            armNativeMenuHook();
+            return;
+          }
+          const rawTarget = ev.target;
+          const targetEl = rawTarget && rawTarget.nodeType === 1 ? rawTarget : rawTarget?.parentElement || null;
+          if (targetEl && targetEl.closest('button, [role="button"], [aria-haspopup], a[href]')) {
+            armNativeMenuHook();
+          }
+        };
+        nativeMenuKeyListener = (ev) => {
+          if (ev.key === 'ContextMenu' || (ev.shiftKey && ev.key === 'F10')) {
+            armNativeMenuHook();
+          }
+        };
+        window.addEventListener('contextmenu', nativeMenuTriggerListener, true);
+        window.addEventListener('mousedown', nativeMenuTriggerListener, true);
+        window.addEventListener('click', nativeMenuTriggerListener, true);
+        window.addEventListener('keydown', nativeMenuKeyListener, true);
+      }
 
       if (document.body) {
         outsideMenuListener = (ev) => {
@@ -1180,39 +1462,33 @@
         };
         document.addEventListener('click', outsideMenuListener, true);
 
-        observer = new MutationObserver((mutations) => {
-          let sawElementAdd = false;
-          for (const m of mutations) {
-            if (m.type === 'characterData') {
-              if (enabled) dirtyNodes.add(m.target);
-            } else if (m.type === 'attributes') {
-              if (enabled) processElementAttributes(m.target);
-            } else if (m.type === 'childList') {
-              for (const added of m.addedNodes) {
-                if (added.nodeType === 1) sawElementAdd = true;
-                if (enabled && (added.nodeType === 1 || added.nodeType === 3)) dirtyNodes.add(added);
-              }
-            }
-          }
-          if (dirtyNodes.size > 0 || sawElementAdd) scheduleFlush();
-        });
-        const observeOpts = enabled
-          ? {
-              childList: true,
-              subtree: true,
-              characterData: true,
-              attributes: true,
-              attributeFilter: ['title', 'placeholder', 'aria-label']
-            }
-          : {
-              childList: true,
-              subtree: true
-            };
-        observer.observe(document.body, observeOpts);
+        observer = new MutationObserver(bindObserverCallback);
+        observer.observe(document.body, getObserveOptions());
       }
     }
 
     function teardown(fullUninstall = true) {
+      disarmNativeMenuHook();
+      if (nativeMenuTriggerListener) {
+        window.removeEventListener('contextmenu', nativeMenuTriggerListener, true);
+        window.removeEventListener('mousedown', nativeMenuTriggerListener, true);
+        window.removeEventListener('click', nativeMenuTriggerListener, true);
+        nativeMenuTriggerListener = null;
+      }
+      if (nativeMenuKeyListener) {
+        window.removeEventListener('keydown', nativeMenuKeyListener, true);
+        nativeMenuKeyListener = null;
+      }
+      if (subObserver) {
+        subObserver.disconnect();
+        subObserver = null;
+        observedSubBody = null;
+      }
+      if (subFrameLoadTarget && subFrameLoadListener) {
+        subFrameLoadTarget.removeEventListener('load', subFrameLoadListener);
+        subFrameLoadTarget = null;
+        subFrameLoadListener = null;
+      }
       if (observer) {
         observer.disconnect();
         observer = null;
@@ -1256,6 +1532,9 @@
       textOrigMap,
       untranslated: untrackedSet,
       switchLocale: requestLocaleSwitch,
+      isNativeMenuHookArmed: () => menuHookActive,
+      armNativeMenuHook,
+      disarmNativeMenuHook,
       rescan() {
         if (enabled && document.body) walkAndLocalize(document.body);
         ensureAppearanceLanguageRow();

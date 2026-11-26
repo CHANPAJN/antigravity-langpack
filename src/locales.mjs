@@ -25,7 +25,23 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: '另有 {0} 项',
     xOfYDone: '已完成 {0}/{1}',
     waitingOnMember: '等待 @{0}',
-    workingForMember: '协助 @{0}'
+    workingForMember: '协助 @{0}',
+    suffixDefault: '{0}（默认）',
+    suffixExperimental: '{0}（实验性）',
+    moveToGroupNamed: '移至分组：{0}',
+    removeFromRecent: '从最近记录移除 {0}',
+    systemDefaultApp: '系统默认（{0}）',
+    stepsCount: '{0} 步',
+    leavingOnDate: '将于 {mon}月{day}日 下线。',
+    sentenceJoiner: '，',
+    stepsShowPlan: '已完成 {0}/{1} 步 · 查看计划',
+    fileSizeLimit: '文件超出 {0}MB 预览上限（当前 {1}MB），无法在此处直接打开或下载。',
+    modelRemovedOnDate: '{model} 将于 {year}年{mon}月{day}日 从 Antigravity 下线移除。',
+    selectModelAfterTurn: '选择模型，当前：{0}（对 /btw 及本轮之后发送的消息生效）',
+    turnsSuffix: '{0}，共 {1} 轮',
+    threadsOpen: '{0} 个讨论串进行中',
+    postsCount: '{0} 条动态',
+    overDuration: '超过 {0}'
   },
   'zh-TW': {
     justNow: '剛剛',
@@ -48,7 +64,23 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: '另有 {0} 項',
     xOfYDone: '已完成 {0}/{1}',
     waitingOnMember: '等待 @{0}',
-    workingForMember: '協助 @{0}'
+    workingForMember: '協助 @{0}',
+    suffixDefault: '{0}（預設）',
+    suffixExperimental: '{0}（實驗性）',
+    moveToGroupNamed: '移至群組：{0}',
+    removeFromRecent: '從最近記錄移除 {0}',
+    systemDefaultApp: '系統預設（{0}）',
+    stepsCount: '{0} 步',
+    leavingOnDate: '將於 {mon}月{day}日 下線。',
+    sentenceJoiner: '，',
+    stepsShowPlan: '已完成 {0}/{1} 步 · 檢視計畫',
+    fileSizeLimit: '檔案超出 {0}MB 預覽上限（目前 {1}MB），無法在此處直接開啟或下載。',
+    modelRemovedOnDate: '{model} 將於 {year}年{mon}月{day}日 自 Antigravity 下線移除。',
+    selectModelAfterTurn: '選擇模型，目前：{0}（對 /btw 及本輪之後傳送的訊息生效）',
+    turnsSuffix: '{0}，共 {1} 輪',
+    threadsOpen: '{0} 個討論串進行中',
+    postsCount: '{0} 則動態',
+    overDuration: '超過 {0}'
   },
   'zh-SG': {
     justNow: '刚刚',
@@ -56,7 +88,23 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: '+{0} 项',
     xOfYDone: '已完成 {0}/{1}',
     waitingOnMember: '等待 @{0}',
-    workingForMember: '协助 @{0}'
+    workingForMember: '协助 @{0}',
+    suffixDefault: '{0}（默认）',
+    suffixExperimental: '{0}（实验性）',
+    moveToGroupNamed: '移至分组：{0}',
+    removeFromRecent: '从最近记录移除 {0}',
+    systemDefaultApp: '系统默认（{0}）',
+    stepsCount: '{0} 步',
+    leavingOnDate: '将于 {mon}月{day}日 下线。',
+    sentenceJoiner: '，',
+    stepsShowPlan: '已完成 {0}/{1} 步 · 查看计划',
+    fileSizeLimit: '文件超出 {0}MB 预览上限（当前 {1}MB），无法在此处直接打开或下载。',
+    modelRemovedOnDate: '{model} 将于 {year}年{mon}月{day}日 从 Antigravity 下线移除。',
+    selectModelAfterTurn: '选择模型，当前：{0}（对 /btw 及本轮之后发送的消息生效）',
+    turnsSuffix: '{0}，共 {1} 轮',
+    threadsOpen: '{0} 个 Thread 进行中',
+    postsCount: '{0} 条动态',
+    overDuration: '超过 {0}'
   },
   ja: {
     justNow: 'たった今',
@@ -79,7 +127,13 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: '他 {0} 件',
     xOfYDone: '{0}/{1} 完了',
     waitingOnMember: '@{0} を待機中',
-    workingForMember: '@{0} を支援中'
+    workingForMember: '@{0} を支援中',
+    suffixDefault: '{0}（既定）',
+    suffixExperimental: '{0}（実験的）',
+    moveToGroupNamed: 'グループへ移動: {0}',
+    removeFromRecent: '最近の履歴から {0} を削除',
+    systemDefaultApp: 'システム既定 ({0})',
+    stepsCount: '{0} ステップ'
   },
   ko: {
     justNow: '방금',
@@ -102,7 +156,13 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: '+{0}개 더보기',
     xOfYDone: '{0}/{1} 완료',
     waitingOnMember: '@{0} 대기 중',
-    workingForMember: '@{0} 지원 중'
+    workingForMember: '@{0} 지원 중',
+    suffixDefault: '{0} (기본값)',
+    suffixExperimental: '{0} (실험 기능)',
+    moveToGroupNamed: '그룹으로 이동: {0}',
+    removeFromRecent: '최근 항목에서 {0} 제거',
+    systemDefaultApp: '시스템 기본값 ({0})',
+    stepsCount: '{0}단계'
   },
   ru: {
     justNow: 'только что',
@@ -125,7 +185,13 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: 'ещё +{0}',
     xOfYDone: 'выполнено {0} из {1}',
     waitingOnMember: 'ожидание @{0}',
-    workingForMember: 'помощь @{0}'
+    workingForMember: 'помощь @{0}',
+    suffixDefault: '{0} (по умолчанию)',
+    suffixExperimental: '{0} (эксперим.)',
+    moveToGroupNamed: 'Переместить в группу: {0}',
+    removeFromRecent: 'Убрать {0} из недавних',
+    systemDefaultApp: 'Системное ({0})',
+    stepsCount: 'Шагов: {0}'
   },
   vi: {
     justNow: 'vừa xong',
@@ -148,7 +214,13 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: '+{0} mục khác',
     xOfYDone: 'Hoàn thành {0}/{1}',
     waitingOnMember: 'Đang chờ @{0}',
-    workingForMember: 'Hỗ trợ @{0}'
+    workingForMember: 'Hỗ trợ @{0}',
+    suffixDefault: '{0} (Mặc định)',
+    suffixExperimental: '{0} (Thử nghiệm)',
+    moveToGroupNamed: 'Chuyển vào nhóm: {0}',
+    removeFromRecent: 'Xóa {0} khỏi Gần đây',
+    systemDefaultApp: 'Mặc định hệ thống ({0})',
+    stepsCount: '{0} bước'
   },
   hi: {
     justNow: 'अभी',
@@ -171,7 +243,13 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: '+{0} और',
     xOfYDone: '{1} में से {0} पूर्ण',
     waitingOnMember: '@{0} की प्रतीक्षा',
-    workingForMember: '@{0} के लिए कार्यरत'
+    workingForMember: '@{0} के लिए कार्यरत',
+    suffixDefault: '{0} (डिफ़ॉल्ट)',
+    suffixExperimental: '{0} (प्रायोगिक)',
+    moveToGroupNamed: 'समूह में ले जाएं: {0}',
+    removeFromRecent: 'हाल ही में से {0} हटाएं',
+    systemDefaultApp: 'सिस्टम डिफ़ॉल्ट ({0})',
+    stepsCount: '{0} चरण'
   },
   id: {
     justNow: 'baru saja',
@@ -194,7 +272,13 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: '+{0} lainnya',
     xOfYDone: '{0}/{1} selesai',
     waitingOnMember: 'Menunggu @{0}',
-    workingForMember: 'Membantu @{0}'
+    workingForMember: 'Membantu @{0}',
+    suffixDefault: '{0} (Default)',
+    suffixExperimental: '{0} (Eksperimental)',
+    moveToGroupNamed: 'Pindahkan ke Grup: {0}',
+    removeFromRecent: 'Hapus {0} dari Terbaru',
+    systemDefaultApp: 'Default sistem ({0})',
+    stepsCount: '{0} langkah'
   },
   th: {
     justNow: 'เมื่อสักครู่',
@@ -217,7 +301,13 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: 'อีก +{0}',
     xOfYDone: 'เสร็จแล้ว {0}/{1}',
     waitingOnMember: 'รอ @{0}',
-    workingForMember: 'ช่วยงาน @{0}'
+    workingForMember: 'ช่วยงาน @{0}',
+    suffixDefault: '{0} (ค่าเริ่มต้น)',
+    suffixExperimental: '{0} (ทดลอง)',
+    moveToGroupNamed: 'ย้ายไปยังกลุ่ม: {0}',
+    removeFromRecent: 'ลบ {0} ออกจากล่าสุด',
+    systemDefaultApp: 'ค่าเริ่มต้นของระบบ ({0})',
+    stepsCount: '{0} ขั้นตอน'
   },
   es: {
     justNow: 'ahora mismo',
@@ -240,7 +330,13 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: '+{0} más',
     xOfYDone: '{0} de {1} completados',
     waitingOnMember: 'Esperando a @{0}',
-    workingForMember: 'Colaborando con @{0}'
+    workingForMember: 'Colaborando con @{0}',
+    suffixDefault: '{0} (Predeterminado)',
+    suffixExperimental: '{0} (Experimental)',
+    moveToGroupNamed: 'Mover al grupo: {0}',
+    removeFromRecent: 'Quitar {0} de Recientes',
+    systemDefaultApp: 'Predeterminado del sistema ({0})',
+    stepsCount: '{0} pasos'
   },
   fr: {
     justNow: 'à l’instant',
@@ -263,7 +359,13 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: '+{0} de plus',
     xOfYDone: '{0} sur {1} terminés',
     waitingOnMember: 'En attente de @{0}',
-    workingForMember: 'En appui de @{0}'
+    workingForMember: 'En appui de @{0}',
+    suffixDefault: '{0} (Par défaut)',
+    suffixExperimental: '{0} (Expérimental)',
+    moveToGroupNamed: 'Déplacer vers le groupe : {0}',
+    removeFromRecent: 'Retirer {0} des récents',
+    systemDefaultApp: 'Par défaut du système ({0})',
+    stepsCount: '{0} étapes'
   },
   de: {
     justNow: 'gerade eben',
@@ -286,7 +388,13 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: '+{0} weitere',
     xOfYDone: '{0} von {1} erledigt',
     waitingOnMember: 'Wartet auf @{0}',
-    workingForMember: 'Arbeitet für @{0}'
+    workingForMember: 'Arbeitet für @{0}',
+    suffixDefault: '{0} (Standard)',
+    suffixExperimental: '{0} (Experimentell)',
+    moveToGroupNamed: 'In Gruppe verschieben: {0}',
+    removeFromRecent: '{0} aus Zuletzt verwendet entfernen',
+    systemDefaultApp: 'Systemstandard ({0})',
+    stepsCount: '{0} Schritte'
   },
   pt: {
     justNow: 'agora mesmo',
@@ -309,7 +417,13 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: '+{0} mais',
     xOfYDone: '{0} de {1} concluídos',
     waitingOnMember: 'Aguardando @{0}',
-    workingForMember: 'Apoiando @{0}'
+    workingForMember: 'Apoiando @{0}',
+    suffixDefault: '{0} (Padrão)',
+    suffixExperimental: '{0} (Experimental)',
+    moveToGroupNamed: 'Mover para o grupo: {0}',
+    removeFromRecent: 'Remover {0} de Recentes',
+    systemDefaultApp: 'Padrão do sistema ({0})',
+    stepsCount: '{0} etapas'
   },
   it: {
     justNow: 'proprio ora',
@@ -332,7 +446,13 @@ const EXTENDED_PATTERNS_BY_LOCALE = {
     plusMore: 'altri +{0}',
     xOfYDone: '{0} su {1} completati',
     waitingOnMember: 'In attesa di @{0}',
-    workingForMember: 'In supporto a @{0}'
+    workingForMember: 'In supporto a @{0}',
+    suffixDefault: '{0} (Predefinito)',
+    suffixExperimental: '{0} (Sperimentale)',
+    moveToGroupNamed: 'Sposta nel gruppo: {0}',
+    removeFromRecent: 'Rimuovi {0} dai recenti',
+    systemDefaultApp: 'Predefinito di sistema ({0})',
+    stepsCount: '{0} passaggi'
   }
 };
 

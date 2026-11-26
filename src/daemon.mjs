@@ -38,7 +38,7 @@ export async function fetchDevToolsPages(port) {
       const url = String(item.url || '');
       if (url.startsWith('devtools://') || url.startsWith('data:') || url.startsWith('about:')) return false;
       if (String(item.title || '').includes('Launchpad')) return false;
-      if (item.type === 'iframe') {
+      if (item.type === 'iframe' || item.type === 'webview') {
         return (
           url.startsWith('plugin://swarm--') ||
           /^https?:\/\/(?:127\.0\.0\.1|localhost):\d+\//i.test(url) ||
@@ -117,7 +117,7 @@ function createPersistentSession(target, channelInfo, getScriptState, onLocaleRe
       const ws = new WebSocket(target.webSocketDebuggerUrl);
       let seq = 1;
       let docScriptId = '';
-      let isWorkbench = target.type === 'iframe';
+      let isWorkbench = target.type === 'iframe' || target.type === 'webview';
       const callbacks = new Map();
 
       const callCdp = (method, params = {}) =>
@@ -178,7 +178,10 @@ function createPersistentSession(target, channelInfo, getScriptState, onLocaleRe
             if (requested) onLocaleRequested?.(requested);
           } else if (msg.method === 'Page.frameNavigated' && !msg.params?.frame?.parentId) {
             setTimeout(() => ensureMounted().catch(() => {}), 150);
-          } else if (msg.method === 'Target.targetCreated' && msg.params?.targetInfo?.type === 'iframe') {
+          } else if (
+            msg.method === 'Target.targetCreated' &&
+            (msg.params?.targetInfo?.type === 'iframe' || msg.params?.targetInfo?.type === 'webview')
+          ) {
             onSubTargetCreated?.();
           }
         } catch {}

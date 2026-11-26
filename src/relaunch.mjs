@@ -115,13 +115,27 @@ export function splitCommandArgs(tailRaw) {
   }
   if (inToken) tokens.push(cur);
 
-  return tokens.filter(
-    (tok) =>
-      tok.length > 0 &&
-      !/^-psn_\d+_\d+$/i.test(tok) &&
-      tok !== '--updated' &&
-      !/^--remote-debugging-port(?:=|$)/i.test(tok)
-  );
+  const cleaned = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+    if (!tok || /^-psn_\d+_\d+$/i.test(tok) || tok === '--updated' || /^--remote-debugging-port(?:=|$)/i.test(tok)) {
+      continue;
+    }
+    if (tok === '--open-url') {
+      const next1 = tokens[i + 1] || '';
+      const next2 = tokens[i + 2] || '';
+      if (next1 === '--' && /^antigravity(?:-insiders|-ide)?:\/\/\/\?windowId=_blank$/i.test(next2)) {
+        i += 2;
+        continue;
+      }
+      if (/^antigravity(?:-insiders|-ide)?:\/\/\/\?windowId=_blank$/i.test(next1)) {
+        i += 1;
+        continue;
+      }
+    }
+    cleaned.push(tok);
+  }
+  return cleaned;
 }
 
 /**
@@ -321,7 +335,7 @@ export function createRelaunchMonitor() {
     if (process.platform === 'win32') {
       const pendingImages = [];
       for (const chInfo of unconnectedChannels) {
-        if (!chInfo.installed || readDevToolsPort(chInfo.portFile) > 0) continue;
+        if (!chInfo.installed) continue;
         const exemptPid = exemptedByChannel.get(chInfo.channel);
         if (exemptPid && isProcessAlive(exemptPid)) continue;
         pendingImages.push({
@@ -415,7 +429,7 @@ export function createRelaunchMonitor() {
     // BSD macOS & Linux `ps -axo pid=,etime=,command=`
     const eligibleSet = new Set();
     for (const chInfo of unconnectedChannels) {
-      if (!chInfo.installed || readDevToolsPort(chInfo.portFile) > 0) continue;
+      if (!chInfo.installed) continue;
       const exemptPid = exemptedByChannel.get(chInfo.channel);
       if (exemptPid && isProcessAlive(exemptPid)) continue;
       eligibleSet.add(chInfo.channel);
@@ -445,7 +459,7 @@ export function createRelaunchMonitor() {
     for (const proc of procs) {
       if (!proc.pid || proc.hasCdpFlag) continue;
       const chInfo = unconnectedChannels.find((c) => c.channel === proc.channel);
-      if (!chInfo || readDevToolsPort(chInfo.portFile) > 0) continue;
+      if (!chInfo) continue;
 
       const maxAgeSec = proc.hasUpdatedFlag ? 25 : 15;
       if (proc.ageSec > maxAgeSec || hasRecentConversationWrite(chInfo.conversationsDir, 15000)) {

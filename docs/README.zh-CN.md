@@ -3,7 +3,7 @@
 # antigravity-langpack
 
 **Google Antigravity（正式版 Stable & 预览版 Insiders）** 与 **Antigravity IDE** 纯文本原生多语言界面包。  
-同一个轻量守护进程按所选语种自动同步对应的 IDE 外壳语言包，并将官方语言包覆盖不到的**右侧 Agent 面板、Antigravity Settings 专属设置页、Swarm 协作看板与行内 Diff/补全按钮**实时本地化——不改 app.asar、保留 macOS 官方公证签名，内置 15 套离线词库（每套 2,125 条）。
+同一个轻量守护进程按所选语种自动同步对应的 IDE 外壳语言包，并将官方语言包覆盖不到的**右侧 Agent 面板、Antigravity Settings 专属设置页、Swarm 协作看板、系统通知卡片、按需上下文菜单与行内 Diff/补全按钮**实时本地化——不改 app.asar、保留 macOS 官方公证签名，内置 15 套离线词库（每套 2,865 条）。
 
 <p>
   <a href="../README.md">English</a> ·
@@ -86,11 +86,11 @@ node cli.mjs uninstall       # 卸载服务并立即无损恢复原版英文界�
 
 - **三端同频接管（Stable + Insiders + IDE）**：零额外后台进程，装一次同时覆盖最新桌面端与 `Antigravity IDE`，在任一端 `设置 → 外观` 切换语言即可同步生效。
 - **无侵入事件流挂载**：守护进程仅通过 `127.0.0.1` 建立单条持久化 CDP WebSocket（监听 `Page.frameNavigated`、`Target.targetCreated` 与 `Runtime.bindingCalled`，空闲 CPU 约 `0.0%`），不触碰客户端安装目录与 `app.asar`。
-- **DOM 隔离与 `WeakMap` 还原**：严格跳过 Monaco 代码编辑器、左侧文件树、顶部代码标签页、底部 Git 分支名、集成终端、代码块与对话正文；通过 `WeakMap` 保存原始文本节点，切换语言或切回英文时内存级直接还原。
-- **冷启动端口补参（`autoRelaunchCdp: true`）**：Windows 自动为快捷方式补齐调试端口参数；若裸启动未带调试口，仅在进程刚启动 `<15s` 且无近期对话写入时发送温和关闭请求（`CloseMainWindow` / `SIGTERM`，绝不使用 `-Force` 或 `SIGKILL` 强杀）并带参重开一次，可在 `dict/config.json` 中设为 `false` 关闭。
+- **DOM 隔离、按需上下文菜单与 `WeakMap` 还原**：严格跳过 Monaco 代码编辑器、左侧文件树、顶部代码标签页、用户自定义目录/分组/分支名、集成终端、代码块与插件原生文档，同时精准覆盖系统通知气泡与瞬时触发的上下文菜单（待机与流式输出零额外开销）；通过 `WeakMap` 保存原始文本节点，切换语言或切回英文时内存级直接还原。
+- **冷启动端口补参（`autoRelaunchCdp: true`）**：Windows 自动为桌面与任务栏快捷方式补齐调试端口参数；若从 `antigravity-ide://` 协议链接或自定义代理脚本裸启动未带调试口，仅在进程刚启动 `<15s` 且无近期对话写入时自动继承原代理变量与启动参数、发送温和关闭请求（`CloseMainWindow` / `SIGTERM`，绝不使用 `-Force` 或 `SIGKILL` 强杀）并带参重开一次，可在 `dict/config.json` 中设为 `false` 关闭。
 - **默认零采集与零越界配置**：`collectUntranslated`、`autoSyncAi`、`syncAiOutputLang` 默认全部为 `false`，默认安装不修改 `~/.gemini/config/` 下的任何规则或技能文件。
 
-## 预置词库（15 套 × 2,125 条，含插件市场与 Swarm 看板全量词条）
+## 预置词库（15 套 × 2,865 条，覆盖设置全子项、模型说明、插件市场与 Swarm 看板）
 
 `zh-CN` 简体中文 · `zh-SG` 简体中文（英文术语） · `zh-TW` 繁體中文 · `ja` 日本語 · `ko` 한국어 · `ru` Русский · `vi` Tiếng Việt · `hi` हिन्दी · `id` Bahasa Indonesia · `th` ภาษาไทย · `es` Español · `fr` Français · `de` Deutsch · `pt` Português · `it` Italiano
 

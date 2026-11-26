@@ -814,3 +814,164 @@ test('Relaunch preserves custom CLI flags (--proxy-server, workspace paths), Aut
     'Windows shortcut scanner must include pinned Taskbar shortcuts'
   );
 });
+
+test('On-demand Electron native context menu hook translates multi-level items, protects custom names, and keeps Array.prototype.map untouched at rest', async () => {
+  const vm = await import('node:vm');
+  const injectorSrc = fs.readFileSync(path.join(PROJECT_ROOT, 'src', 'injector.js'), 'utf8');
+  const hadConfig = fs.existsSync(FILES.config);
+  const backupConfig = hadConfig ? fs.readFileSync(FILES.config, 'utf8') : '';
+  const builder = createPayloadBuilder();
+  writeConfigFile({ locale: 'zh-CN', enabled: true });
+  const zhSpec = SUPPORTED_LOCALES['zh-CN'];
+  const { merged } = loadMergedDictionary('zh-CN');
+
+  const winListeners = new Map();
+  let pendingTimerFn = null;
+
+  const fakeBody = {
+    nodeType: 1,
+    tagName: 'BODY',
+    isConnected: true,
+    closest: () => null,
+    getAttribute: () => null,
+    setAttribute: () => {},
+    removeAttribute: () => {},
+    querySelector: () => null,
+    querySelectorAll: () => []
+  };
+
+  const fakeDoc = {
+    hidden: false,
+    title: 'Antigravity',
+    body: fakeBody,
+    head: { appendChild: () => {} },
+    createElement: () => ({ style: {}, setAttribute: () => {}, appendChild: () => {}, remove: () => {} }),
+    getElementById: () => null,
+    querySelectorAll: () => [],
+    createTreeWalker: () => ({ currentNode: null, nextNode: () => null }),
+    addEventListener: () => {},
+    removeEventListener: () => {}
+  };
+
+  const sandbox = {
+    window: null,
+    document: fakeDoc,
+    Array,
+    Object,
+    WeakMap,
+    WeakSet,
+    Set,
+    Map,
+    NodeFilter: { SHOW_TEXT: 4, SHOW_ELEMENT: 1, FILTER_ACCEPT: 1, FILTER_REJECT: 2, FILTER_SKIP: 3 },
+    MutationObserver: class {
+      observe() {}
+      disconnect() {}
+    },
+    requestAnimationFrame: () => 1,
+    cancelAnimationFrame: () => {},
+    setTimeout: (fn) => {
+      pendingTimerFn = fn;
+      return 99;
+    },
+    clearTimeout: () => {
+      pendingTimerFn = null;
+    }
+  };
+
+  sandbox.window = {
+    top: null,
+    location: { protocol: 'https:', hostname: '127.0.0.1', href: 'https://127.0.0.1:53454/' },
+    electronNative: Object.freeze({ showContextMenu: () => Promise.resolve(null) }),
+    addEventListener: (type, fn) => winListeners.set(type, fn),
+    removeEventListener: (type) => winListeners.delete(type)
+  };
+  sandbox.window.top = sandbox.window;
+
+  const nativeMapBefore = Array.prototype.map;
+  try {
+    vm.runInNewContext(injectorSrc, sandbox);
+    sandbox.window.__AGI18N_BOOT__({
+      buildId: builder.refreshIfNeeded().buildId,
+      locale: 'zh-CN',
+      enabled: true,
+      dict: merged,
+      contextOverrides: zhSpec.contextOverrides,
+      patterns: zhSpec.patterns,
+      localeOptions: LOCALE_MENU_OPTIONS
+    });
+
+    const rt = sandbox.window.__AGI18N_RUNTIME__;
+    assert.equal(rt.isNativeMenuHookArmed(), false);
+    assert.equal(Array.prototype.map, nativeMapBefore, 'Array.prototype.map must stay untouched at rest');
+
+    // Trigger right-click capture listener
+    const ctxHandler = winListeners.get('contextmenu');
+    assert.equal(typeof ctxHandler, 'function');
+    ctxHandler({ type: 'contextmenu', button: 2 });
+    assert.equal(rt.isNativeMenuHookArmed(), true);
+    assert.equal(Object.prototype.propertyIsEnumerable.call(Array.prototype, 'map'), false);
+
+    // Simulate Antigravity's native menu builder (Cjb .map with nested submenu)
+    const rawItems = [
+      { id: 'pin', label: 'Pin', accelerator: '' },
+      { type: 'separator' },
+      { id: 'fork', label: 'Fork in Current Workspace', accelerator: '' },
+      { id: 'open-side', label: 'Side Panel (Default)', accelerator: '' },
+      {
+        id: 'move-proj',
+        label: 'Move to Project',
+        accelerator: '',
+        items: [
+          { id: 'project-user-share', label: 'Share', accelerator: '' },
+          { id: 'project-new', label: 'New Project...', accelerator: '' },
+          { id: 'group-active', label: 'Active', accelerator: '' },
+          { id: 'move-grp', label: 'Move to Group: CoreTeam', accelerator: '' }
+        ]
+      }
+    ];
+
+    function buildMenu(list) {
+      return list.map((d) => {
+        if (d.type === 'separator') return { type: 'separator' };
+        const entry = {
+          id: d.id,
+          label: d.label,
+          type: 'normal',
+          checked: false,
+          disabled: false,
+          accelerator: d.accelerator
+        };
+        if (d.items) entry.submenu = buildMenu(d.items);
+        return entry;
+      });
+    }
+
+    const built = buildMenu(rawItems);
+    assert.equal(built[0].label, '置顶');
+    assert.equal(built[2].label, '在当前工作区中分叉');
+    assert.equal(built[3].label, '右侧边栏（默认）');
+    assert.equal(built[4].label, '移至项目');
+    assert.equal(built[4].submenu[0].label, 'Share', 'User project name "Share" must not be translated');
+    assert.equal(built[4].submenu[1].label, '新建项目...');
+    assert.equal(built[4].submenu[2].label, 'Active', 'User group name "Active" must not be translated');
+    assert.equal(built[4].submenu[3].label, '移至分组：CoreTeam');
+
+    // Auto-disarm after 160ms timeout restores native Array.prototype.map
+    assert.equal(typeof pendingTimerFn, 'function');
+    pendingTimerFn();
+    assert.equal(rt.isNativeMenuHookArmed(), false);
+    assert.equal(Array.prototype.map, nativeMapBefore, 'Array.prototype.map must restore automatically after window expires');
+
+    rt.teardown(true);
+    assert.equal(winListeners.has('contextmenu'), false);
+  } finally {
+    if (hadConfig) fs.writeFileSync(FILES.config, backupConfig, 'utf8');
+    else if (fs.existsSync(FILES.config)) fs.unlinkSync(FILES.config);
+    Object.defineProperty(Array.prototype, 'map', {
+      value: nativeMapBefore,
+      writable: true,
+      configurable: true,
+      enumerable: false
+    });
+  }
+});
