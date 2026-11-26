@@ -73,6 +73,137 @@ export function parsePosixElapsedSeconds(etimeRaw) {
 }
 
 /**
+ * Tokenizes a command-line argument tail while preserving quoted paths/flags and dropping transient OS tokens.
+ */
+export function splitCommandArgs(tailRaw) {
+  const s = String(tailRaw || '').trim();
+  if (!s) return [];
+  const tokens = [];
+  let cur = '';
+  let quote = '';
+  let inToken = false;
+
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (quote) {
+      if (ch === '\\' && quote === '"' && i + 1 < s.length && (s[i + 1] === '"' || s[i + 1] === '\\')) {
+        cur += s[i + 1];
+        i++;
+      } else if (ch === quote) {
+        quote = '';
+      } else {
+        cur += ch;
+      }
+      inToken = true;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      inToken = true;
+      continue;
+    }
+    if (/\s/.test(ch)) {
+      if (inToken) {
+        tokens.push(cur);
+        cur = '';
+        inToken = false;
+      }
+      continue;
+    }
+    cur += ch;
+    inToken = true;
+  }
+  if (inToken) tokens.push(cur);
+
+  return tokens.filter(
+    (tok) =>
+      tok.length > 0 &&
+      !/^-psn_\d+_\d+$/i.test(tok) &&
+      tok !== '--updated' &&
+      !/^--remote-debugging-port(?:=|$)/i.test(tok)
+  );
+}
+
+/**
+ * Strips the leading executable path from a Windows Win32_Process CommandLine string and parses trailing arguments.
+ */
+export function extractWinCommandTail(fullCmd, exePath = '') {
+  const raw = String(fullCmd || '').trim();
+  if (!raw) return [];
+  let rest = '';
+  if (raw.startsWith('"')) {
+    const endQuote = raw.indexOf('"', 1);
+    if (endQuote !== -1) rest = raw.slice(endQuote + 1);
+  } else if (exePath && raw.toLowerCase().startsWith(String(exePath).toLowerCase())) {
+    rest = raw.slice(String(exePath).length);
+  } else {
+    const firstSpace = raw.search(/\s/);
+    if (firstSpace !== -1) rest = raw.slice(firstSpace + 1);
+  }
+  return splitCommandArgs(rest);
+}
+
+const PROXY_ENV_KEY_RE = /^(?:http_proxy|https_proxy|all_proxy|no_proxy)$/i;
+
+/**
+ * Extracts proxy environment variables (`http_proxy`, `https_proxy`, `all_proxy`, `no_proxy` in upper/lower case)
+ * from macOS `ps eww -o command=` output (`delimiter = 'space'`) or Linux `/proc/<pid>/environ` (`delimiter = 'nul'`).
+ */
+export function extractProxyEnvFromText(rawText, delimiter = 'space') {
+  const out = {};
+  const text = String(rawText || '');
+  if (!text) return out;
+
+  if (delimiter === 'nul') {
+    for (const entry of text.split('\0')) {
+      const eq = entry.indexOf('=');
+      if (eq <= 0) continue;
+      const k = entry.slice(0, eq).trim();
+      const v = entry.slice(eq + 1).trim();
+      if (PROXY_ENV_KEY_RE.test(k) && v && !/[\x00-\x1f]/.test(v)) {
+        out[k] = v;
+      }
+    }
+    return out;
+  }
+
+  const re = /(?:^|\s)((?:http_proxy|https_proxy|all_proxy|no_proxy)=[^\s\x00-\x1f]+)/gi;
+  let match;
+  while ((match = re.exec(text)) !== null) {
+    const pair = match[1];
+    const eq = pair.indexOf('=');
+    if (eq <= 0) continue;
+    const k = pair.slice(0, eq);
+    const v = pair.slice(eq + 1);
+    if (PROXY_ENV_KEY_RE.test(k) && v) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+function captureProcessProxyEnv(pid, platform = process.platform) {
+  if (!Number.isInteger(pid) || pid <= 0) return {};
+  try {
+    if (platform === 'darwin') {
+      const psEnv = spawnSync('ps', ['eww', '-o', 'command=', '-p', String(pid)], {
+        encoding: 'utf8',
+        timeout: 1500
+      });
+      if (psEnv.status === 0 && psEnv.stdout) {
+        return extractProxyEnvFromText(psEnv.stdout, 'space');
+      }
+    } else if (platform === 'linux') {
+      const envPath = `/proc/${pid}/environ`;
+      if (fs.existsSync(envPath)) {
+        return extractProxyEnvFromText(fs.readFileSync(envPath, 'utf8'), 'nul');
+      }
+    }
+  } catch {}
+  return {};
+}
+
+/**
  * Parses a single `ps -axo pid=,etime=,command=` row on macOS (handles spaces in `Antigravity - Insiders.app`) or Linux.
  */
 export function parsePosixHostProcessRow(row, platform = process.platform) {
@@ -87,11 +218,12 @@ export function parsePosixHostProcessRow(row, platform = process.platform) {
 
   if (platform === 'darwin') {
     const macMatch = cmd.match(
-      /^(\S.*?\/Antigravity(?:\s-\sInsiders|\sIDE)?\.app)\/Contents\/MacOS\/(Antigravity(?:\s-\sInsiders|\sIDE)?|Electron)(?:\s|$)/
+      /^(\S.*?\/Antigravity(?:\s-\sInsiders|\sIDE)?\.app)\/Contents\/MacOS\/(Antigravity(?:\s-\sInsiders|\sIDE)?|Electron)(?:\s+(.*))?$/
     );
     if (!macMatch) return null;
     const appBundle = macMatch[1];
     const execName = macMatch[2];
+    const restArgs = macMatch[3] || '';
     const channel = /Antigravity\s+IDE\.app/i.test(appBundle)
       ? 'ide'
       : /Insiders/i.test(appBundle) || /Insiders/i.test(execName)
@@ -104,13 +236,15 @@ export function parsePosixHostProcessRow(row, platform = process.platform) {
       exePath: `${appBundle}/Contents/MacOS/${execName}`,
       ageSec,
       hasCdpFlag: /--remote-debugging-port(?:=|\s|$)/i.test(cmd),
-      hasUpdatedFlag: /--updated(?:\s|$)/i.test(cmd)
+      hasUpdatedFlag: /--updated(?:\s|$)/i.test(cmd),
+      extraArgs: splitCommandArgs(restArgs)
     };
   }
 
-  const linuxMatch = cmd.match(/^(\/\S*\/antigravity(?:-insiders|-ide)?)(?:\s|$)/i);
+  const linuxMatch = cmd.match(/^(\/\S*\/antigravity(?:-insiders|-ide)?)(?:\s+(.*))?$/i);
   if (!linuxMatch) return null;
   const exePath = linuxMatch[1];
+  const restArgs = linuxMatch[2] || '';
   const channel = /antigravity-ide$/i.test(exePath) ? 'ide' : /insiders/i.test(exePath) ? 'insiders' : 'stable';
   return {
     pid,
@@ -119,7 +253,8 @@ export function parsePosixHostProcessRow(row, platform = process.platform) {
     exePath,
     ageSec,
     hasCdpFlag: /--remote-debugging-port(?:=|\s|$)/i.test(cmd),
-    hasUpdatedFlag: /--updated(?:\s|$)/i.test(cmd)
+    hasUpdatedFlag: /--updated(?:\s|$)/i.test(cmd),
+    extraArgs: splitCommandArgs(restArgs)
   };
 }
 
@@ -134,7 +269,13 @@ export function ensureWindowsShortcutsFlag(targetExePaths = []) {
     `$targets = @(${escapedList})`,
     `$updated = 0`,
     `$sh = New-Object -ComObject WScript.Shell`,
-    `$dirs = @([Environment]::GetFolderPath('Desktop'), (Join-Path $env:APPDATA 'Microsoft\\Windows\\Start Menu\\Programs'))`,
+    `$dirs = @(`,
+    `  [Environment]::GetFolderPath('Desktop'),`,
+    `  [Environment]::GetFolderPath('CommonDesktopDirectory'),`,
+    `  (Join-Path $env:APPDATA 'Microsoft\\Windows\\Start Menu\\Programs'),`,
+    `  [Environment]::GetFolderPath('CommonPrograms'),`,
+    `  (Join-Path $env:APPDATA 'Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar')`,
+    `)`,
     `foreach ($d in $dirs) {`,
     `  if (Test-Path -LiteralPath $d) {`,
     `    Get-ChildItem -LiteralPath $d -Filter '*Antigravity*.lnk' -Recurse | ForEach-Object {`,
@@ -252,16 +393,18 @@ export function createRelaunchMonitor() {
               ? 'insiders'
               : 'stable';
           const cmd = String(h.cmd || '');
+          const exeStr = String(h.exe || '');
           const hasFlag = /--remote-debugging-port(?:=|\s|$)/i.test(cmd);
           if (hasFlag && Number(h.pid) > 0) nonHostPidCache.add(Number(h.pid));
           return {
             pid: Number(h.pid) || 0,
             channel: ch,
             appBundle: '',
-            exePath: String(h.exe || ''),
+            exePath: exeStr,
             ageSec: Number(h.ageSec) || 99999,
             hasCdpFlag: hasFlag,
-            hasUpdatedFlag: /--updated(?:\s|$)/i.test(cmd)
+            hasUpdatedFlag: /--updated(?:\s|$)/i.test(cmd),
+            extraArgs: extractWinCommandTail(cmd, exeStr)
           };
         });
       } catch {
@@ -318,6 +461,12 @@ export function createRelaunchMonitor() {
 
       busy = true;
       try {
+        // Capture any user-injected proxy environment variables (e.g. macOS Automator / shell wrapper) BEFORE stopping pid
+        const inheritedProxyEnv = captureProcessProxyEnv(proc.pid, process.platform);
+        const relaunchArgs = ['--remote-debugging-port=0', ...(Array.isArray(proc.extraArgs) ? proc.extraArgs : [])];
+        const mergedEnv =
+          Object.keys(inheritedProxyEnv).length > 0 ? { ...process.env, ...inheritedProxyEnv } : process.env;
+
         writeGuardState({
           lastAtMs: now,
           channel: proc.channel,
@@ -349,19 +498,39 @@ export function createRelaunchMonitor() {
 
         if (process.platform === 'darwin') {
           const macBundle = proc.appBundle || chInfo.appBundle;
+          let launchedViaOpen = false;
           if (macBundle) {
-            spawnSync('/usr/bin/open', ['-a', macBundle, '--args', '--remote-debugging-port=0'], {
+            const openArgs = ['-a', macBundle];
+            for (const [ek, ev] of Object.entries(inheritedProxyEnv)) {
+              openArgs.push('--env', `${ek}=${ev}`);
+            }
+            openArgs.push('--args', ...relaunchArgs);
+            const openRes = spawnSync('/usr/bin/open', openArgs, {
               stdio: 'ignore',
-              timeout: 5000
+              timeout: 5000,
+              env: mergedEnv
             });
+            launchedViaOpen = openRes.status === 0;
+          }
+          if (!launchedViaOpen) {
+            const fallbackExe = proc.exePath || chInfo.exePath;
+            if (fallbackExe) {
+              const child = spawn(fallbackExe, relaunchArgs, {
+                detached: true,
+                stdio: 'ignore',
+                env: mergedEnv
+              });
+              child.unref();
+            }
           }
         } else {
           const targetExe = proc.exePath || chInfo.exePath;
           if (targetExe) {
-            const child = spawn(targetExe, ['--remote-debugging-port=0'], {
+            const child = spawn(targetExe, relaunchArgs, {
               detached: true,
               stdio: 'ignore',
-              windowsHide: false
+              windowsHide: false,
+              env: mergedEnv
             });
             child.unref();
           }

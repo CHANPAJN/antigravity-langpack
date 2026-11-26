@@ -19,7 +19,13 @@ import {
   resolveLocaleFiles,
   writeConfigFile
 } from '../src/paths.mjs';
-import { parsePosixElapsedSeconds, parsePosixHostProcessRow } from '../src/relaunch.mjs';
+import {
+  extractProxyEnvFromText,
+  extractWinCommandTail,
+  parsePosixElapsedSeconds,
+  parsePosixHostProcessRow,
+  splitCommandArgs
+} from '../src/relaunch.mjs';
 import {
   AI_LANG_RULE_FILENAME,
   configureAutostart,
@@ -757,4 +763,54 @@ test('install.ps1 & install.sh remain pure ASCII/clean and detect existing Node 
       fs.rmSync(tmpRepo, { recursive: true, force: true });
     }
   }
+});
+
+test('Relaunch preserves custom CLI flags (--proxy-server, workspace paths), Automator proxy env vars, and Windows Taskbar pinned shortcuts', () => {
+  const macAutomator = parsePosixHostProcessRow(
+    '  5120   00:04 /Applications/Antigravity.app/Contents/MacOS/Antigravity -psn_0_12345 --proxy-server="http://127.0.0.1:7890" "/Users/dev/My Project" --updated',
+    'darwin'
+  );
+  assert.equal(macAutomator.channel, 'stable');
+  assert.deepEqual(macAutomator.extraArgs, ['--proxy-server=http://127.0.0.1:7890', '/Users/dev/My Project']);
+
+  const linuxCustom = parsePosixHostProcessRow(
+    '  6220   00:03 /usr/bin/antigravity-insiders --proxy-bypass-list=localhost,127.0.0.1 /home/dev/repo',
+    'linux'
+  );
+  assert.equal(linuxCustom.channel, 'insiders');
+  assert.deepEqual(linuxCustom.extraArgs, ['--proxy-bypass-list=localhost,127.0.0.1', '/home/dev/repo']);
+
+  const winArgs = extractWinCommandTail(
+    '"C:\\Users\\LI\\AppData\\Local\\Programs\\Antigravity\\Antigravity.exe" --proxy-server=socks5://127.0.0.1:1080 "D:\\Code\\Demo App"',
+    'C:\\Users\\LI\\AppData\\Local\\Programs\\Antigravity\\Antigravity.exe'
+  );
+  assert.deepEqual(winArgs, ['--proxy-server=socks5://127.0.0.1:1080', 'D:\\Code\\Demo App']);
+
+  assert.deepEqual(splitCommandArgs('--remote-debugging-port=9222 --flag=1'), ['--flag=1']);
+
+  const macPsEww =
+    '/Applications/Antigravity.app/Contents/MacOS/Antigravity PATH=/usr/bin:/bin http_proxy=http://127.0.0.1:7890 https_proxy=http://127.0.0.1:7890 ALL_PROXY=socks5://127.0.0.1:7891 no_proxy=localhost,127.0.0.1 HOME=/Users/dev SECRET_TOKEN=should_not_copy';
+  assert.deepEqual(extractProxyEnvFromText(macPsEww, 'space'), {
+    http_proxy: 'http://127.0.0.1:7890',
+    https_proxy: 'http://127.0.0.1:7890',
+    ALL_PROXY: 'socks5://127.0.0.1:7891',
+    no_proxy: 'localhost,127.0.0.1'
+  });
+
+  const linuxEnviron = [
+    'USER=dev',
+    'HTTP_PROXY=http://127.0.0.1:8080',
+    'HTTPS_PROXY=http://127.0.0.1:8080',
+    'API_KEY=ignore_me'
+  ].join('\0');
+  assert.deepEqual(extractProxyEnvFromText(linuxEnviron, 'nul'), {
+    HTTP_PROXY: 'http://127.0.0.1:8080',
+    HTTPS_PROXY: 'http://127.0.0.1:8080'
+  });
+
+  const relaunchSrc = fs.readFileSync(path.join(PROJECT_ROOT, 'src', 'relaunch.mjs'), 'utf8');
+  assert.ok(
+    relaunchSrc.includes('User Pinned\\\\TaskBar'),
+    'Windows shortcut scanner must include pinned Taskbar shortcuts'
+  );
 });
