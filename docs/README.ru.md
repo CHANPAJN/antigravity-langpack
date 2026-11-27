@@ -2,7 +2,7 @@
 
 # antigravity-langpack
 
-Нативный текстовый языковой пакет и русификатор для **Google Antigravity (Stable и Insiders)** и **Antigravity IDE**.  
+Нативный текстовый языковой пакет и русификатор для **Google Antigravity (Stable и Insiders)**, **Antigravity IDE** и **официального расширения VS Code (`Google.google-antigravity`)**.  
 Один лёгкий фоновый демон синхронизирует официальный языковой пакет оболочки IDE и переводит встроенную **боковую панель Agent, настройки Antigravity Settings, панель Swarm и инлайн-кнопки** — без модификации app.asar, с сохранением подписи macOS · 15 офлайн-локалей по 2 865 строк.
 
 <p>

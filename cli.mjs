@@ -511,7 +511,7 @@ async function main() {
     let macLaunchers = [];
     let serviceId = '';
     try {
-      updatedShortcuts = ensureWindowsShortcutsFlag(channels.map((c) => c.exePath));
+      updatedShortcuts = ensureWindowsShortcutsFlag(channels.filter((c) => c.installed).map((c) => c.exePath));
     } catch {}
     try {
       if (process.platform === 'darwin' && args.includes('--mac-launcher')) {

@@ -286,27 +286,129 @@ export function syncAgentLanguageRule(localeCode = 'zh-CN', enabled = false, { c
   }
 }
 
-export function readDaemonPid() {
+export function isDaemonCommandLine(cmdLine) {
+  const text = String(cmdLine || '').trim();
+  if (!text) return false;
+  return /\bnode(?:js)?(?:\.exe)?\b/i.test(text) && /(?:^|[\\/"'\s])src[\\/]daemon\.mjs(?=$|["'\s])/i.test(text);
+}
+
+export function parseWinTasklistImageName(csvOutput, expectedPid) {
+  const text = String(csvOutput || '');
+  for (const line of text.split(/\r?\n/)) {
+    const m = line.match(/^\s*"([^"]+)"\s*,\s*"(\d+)"/);
+    if (m && Number.parseInt(m[2], 10) === expectedPid) {
+      return m[1];
+    }
+  }
+  return '';
+}
+
+export function isLiveDaemonPid(pid, { platform = process.platform } = {}) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
   try {
-    if (!fs.existsSync(PID_LOCK_FILE)) return 0;
-    const pid = Number.parseInt(fs.readFileSync(PID_LOCK_FILE, 'utf8').trim(), 10);
-    if (!Number.isInteger(pid) || pid <= 0) return 0;
     process.kill(pid, 0);
-    return pid;
+  } catch (err) {
+    if (err?.code !== 'EPERM') return false;
+  }
+
+  try {
+    if (platform === 'win32') {
+      const tl = spawnSync('tasklist.exe', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH'], {
+        encoding: 'utf8',
+        windowsHide: true,
+        timeout: 2500
+      });
+      if (tl.status === 0) {
+        const imageName = parseWinTasklistImageName(tl.stdout, pid);
+        if (!imageName || !/^node(?:js)?(?:\.exe)?$/i.test(imageName)) {
+          return false;
+        }
+      }
+      const cim = spawnSync(
+        'powershell.exe',
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-ExecutionPolicy',
+          'Bypass',
+          '-Command',
+          `(Get-CimInstance -ClassName Win32_Process -Filter 'ProcessId = ${pid}' -ErrorAction SilentlyContinue).CommandLine`
+        ],
+        {
+          encoding: 'utf8',
+          windowsHide: true,
+          timeout: 4000
+        }
+      );
+      if (cim.status === 0) {
+        return isDaemonCommandLine(cim.stdout);
+      }
+      return false;
+    }
+
+    if (platform === 'linux') {
+      const procCmdPath = `/proc/${pid}/cmdline`;
+      try {
+        if (fs.existsSync('/proc')) {
+          if (!fs.existsSync(procCmdPath)) return false;
+          const raw = fs.readFileSync(procCmdPath, 'utf8').replace(/\0+/g, ' ');
+          if (raw.trim()) return isDaemonCommandLine(raw);
+        }
+      } catch {}
+      const psLinux = spawnSync('ps', ['-p', String(pid), '-o', 'args='], { encoding: 'utf8', timeout: 2000 });
+      if (psLinux.status !== 0) return false;
+      return isDaemonCommandLine(psLinux.stdout);
+    }
+
+    const psPosix = spawnSync('ps', ['-p', String(pid), '-o', 'command='], { encoding: 'utf8', timeout: 2000 });
+    if (psPosix.status !== 0) return false;
+    return isDaemonCommandLine(psPosix.stdout);
+  } catch {
+    return false;
+  }
+}
+
+export function readDaemonPid({ lockFile = PID_LOCK_FILE, cleanupStale = true, probeFn = isLiveDaemonPid } = {}) {
+  try {
+    if (!fs.existsSync(lockFile)) return 0;
+    const firstLine = fs.readFileSync(lockFile, 'utf8').split(/\r?\n/)[0]?.trim() || '';
+    const pid = Number.parseInt(firstLine, 10);
+    if (!Number.isInteger(pid) || pid <= 0) {
+      if (cleanupStale) {
+        try {
+          fs.unlinkSync(lockFile);
+        } catch {}
+      }
+      return 0;
+    }
+    if (probeFn(pid)) {
+      return pid;
+    }
+    if (cleanupStale) {
+      try {
+        const currentFirst = fs.existsSync(lockFile)
+          ? fs.readFileSync(lockFile, 'utf8').split(/\r?\n/)[0]?.trim() || ''
+          : '';
+        if (Number.parseInt(currentFirst, 10) === pid) {
+          fs.unlinkSync(lockFile);
+        }
+      } catch {}
+    }
+    return 0;
   } catch {
     return 0;
   }
 }
 
-export function stopBackgroundDaemon() {
-  const pid = readDaemonPid();
+export function stopBackgroundDaemon({ lockFile = PID_LOCK_FILE, probeFn = isLiveDaemonPid } = {}) {
+  const pid = readDaemonPid({ lockFile, cleanupStale: true, probeFn });
   if (pid > 0) {
     try {
       process.kill(pid, 'SIGTERM');
     } catch {}
   }
   try {
-    if (fs.existsSync(PID_LOCK_FILE)) fs.unlinkSync(PID_LOCK_FILE);
+    if (fs.existsSync(lockFile)) fs.unlinkSync(lockFile);
   } catch {}
   return pid;
 }
@@ -379,7 +481,13 @@ export function installMacShellLaunchers(channels = [], targetAppsDir = path.joi
 
   for (const ch of channels) {
     const appName =
-      ch.channel === 'ide' ? 'Antigravity IDE' : ch.channel === 'insiders' ? 'Antigravity - Insiders' : 'Antigravity';
+      ch.channel === 'vscode'
+        ? 'Visual Studio Code'
+        : ch.channel === 'ide'
+          ? 'Antigravity IDE'
+          : ch.channel === 'insiders'
+            ? 'Antigravity - Insiders'
+            : 'Antigravity';
     const sourceBundle = ch.appBundle || `/Applications/${appName}.app`;
     const wrapperName = `${appName} (i18n).app`;
     const wrapperDir = path.join(targetAppsDir, wrapperName);
@@ -402,11 +510,13 @@ export function installMacShellLaunchers(channels = [], targetAppsDir = path.joi
     } catch {}
 
     const bundleId =
-      ch.channel === 'ide'
-        ? 'io.github.antigravity-langpack.launcher.ide'
-        : ch.channel === 'insiders'
-          ? 'io.github.antigravity-langpack.launcher.insiders'
-          : 'io.github.antigravity-langpack.launcher.stable';
+      ch.channel === 'vscode'
+        ? 'io.github.antigravity-langpack.launcher.vscode'
+        : ch.channel === 'ide'
+          ? 'io.github.antigravity-langpack.launcher.ide'
+          : ch.channel === 'insiders'
+            ? 'io.github.antigravity-langpack.launcher.insiders'
+            : 'io.github.antigravity-langpack.launcher.stable';
 
     const infoPlist =
       [
@@ -428,7 +538,12 @@ export function installMacShellLaunchers(channels = [], targetAppsDir = path.joi
 }
 
 export function removeMacShellLaunchers(targetAppsDir = path.join(os.homedir(), 'Applications')) {
-  for (const name of ['Antigravity (i18n).app', 'Antigravity - Insiders (i18n).app', 'Antigravity IDE (i18n).app']) {
+  for (const name of [
+    'Antigravity (i18n).app',
+    'Antigravity - Insiders (i18n).app',
+    'Antigravity IDE (i18n).app',
+    'Visual Studio Code (i18n).app'
+  ]) {
     const p = path.join(targetAppsDir, name);
     try {
       if (fs.existsSync(p)) fs.rmSync(p, { recursive: true, force: true });

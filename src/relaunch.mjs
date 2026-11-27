@@ -124,11 +124,11 @@ export function splitCommandArgs(tailRaw) {
     if (tok === '--open-url') {
       const next1 = tokens[i + 1] || '';
       const next2 = tokens[i + 2] || '';
-      if (next1 === '--' && /^antigravity(?:-insiders|-ide)?:\/\/\/\?windowId=_blank$/i.test(next2)) {
+      if (next1 === '--' && /^(?:antigravity(?:-insiders|-ide)?|vscode):\/\/\/\?windowId=_blank$/i.test(next2)) {
         i += 2;
         continue;
       }
-      if (/^antigravity(?:-insiders|-ide)?:\/\/\/\?windowId=_blank$/i.test(next1)) {
+      if (/^(?:antigravity(?:-insiders|-ide)?|vscode):\/\/\/\?windowId=_blank$/i.test(next1)) {
         i += 1;
         continue;
       }
@@ -232,17 +232,19 @@ export function parsePosixHostProcessRow(row, platform = process.platform) {
 
   if (platform === 'darwin') {
     const macMatch = cmd.match(
-      /^(\S.*?\/Antigravity(?:\s-\sInsiders|\sIDE)?\.app)\/Contents\/MacOS\/(Antigravity(?:\s-\sInsiders|\sIDE)?|Electron)(?:\s+(.*))?$/
+      /^(\S.*?\/(?:Antigravity(?:\s-\sInsiders|\sIDE)?|Visual\s+Studio\s+Code)\.app)\/Contents\/MacOS\/(Antigravity(?:\s-\sInsiders|\sIDE)?|Electron)(?:\s+(.*))?$/
     );
     if (!macMatch) return null;
     const appBundle = macMatch[1];
     const execName = macMatch[2];
     const restArgs = macMatch[3] || '';
-    const channel = /Antigravity\s+IDE\.app/i.test(appBundle)
-      ? 'ide'
-      : /Insiders/i.test(appBundle) || /Insiders/i.test(execName)
-        ? 'insiders'
-        : 'stable';
+    const channel = /Visual\s+Studio\s+Code\.app/i.test(appBundle)
+      ? 'vscode'
+      : /Antigravity\s+IDE\.app/i.test(appBundle)
+        ? 'ide'
+        : /Insiders/i.test(appBundle) || /Insiders/i.test(execName)
+          ? 'insiders'
+          : 'stable';
     return {
       pid,
       channel,
@@ -255,11 +257,17 @@ export function parsePosixHostProcessRow(row, platform = process.platform) {
     };
   }
 
-  const linuxMatch = cmd.match(/^(\/\S*\/antigravity(?:-insiders|-ide)?)(?:\s+(.*))?$/i);
+  const linuxMatch = cmd.match(/^(\/\S*\/(?:antigravity(?:-insiders|-ide)?|code))(?:\s+(.*))?$/i);
   if (!linuxMatch) return null;
   const exePath = linuxMatch[1];
   const restArgs = linuxMatch[2] || '';
-  const channel = /antigravity-ide$/i.test(exePath) ? 'ide' : /insiders/i.test(exePath) ? 'insiders' : 'stable';
+  const channel = /\/code$/i.test(exePath)
+    ? 'vscode'
+    : /antigravity-ide$/i.test(exePath)
+      ? 'ide'
+      : /insiders/i.test(exePath)
+        ? 'insiders'
+        : 'stable';
   return {
     pid,
     channel,
@@ -292,7 +300,7 @@ export function ensureWindowsShortcutsFlag(targetExePaths = []) {
     `)`,
     `foreach ($d in $dirs) {`,
     `  if (Test-Path -LiteralPath $d) {`,
-    `    Get-ChildItem -LiteralPath $d -Filter '*Antigravity*.lnk' -Recurse | ForEach-Object {`,
+    `    Get-ChildItem -LiteralPath $d -Recurse -File | Where-Object { $_.Name -like '*Antigravity*.lnk' -or $_.Name -like '*Visual Studio Code*.lnk' -or $_.Name -like '*VS Code*.lnk' } | ForEach-Object {`,
     `      $s = $sh.CreateShortcut($_.FullName)`,
     `      foreach ($exe in $targets) {`,
     `        if (($s.TargetPath -ieq $exe) -and ($s.Arguments -notmatch '--remote-debugging-port')) {`,
@@ -341,11 +349,13 @@ export function createRelaunchMonitor() {
         pendingImages.push({
           channel: chInfo.channel,
           imageName:
-            chInfo.channel === 'ide'
-              ? 'Antigravity IDE.exe'
-              : chInfo.channel === 'insiders'
-                ? 'Antigravity - Insiders.exe'
-                : 'Antigravity.exe'
+            chInfo.channel === 'vscode'
+              ? 'Code.exe'
+              : chInfo.channel === 'ide'
+                ? 'Antigravity IDE.exe'
+                : chInfo.channel === 'insiders'
+                  ? 'Antigravity - Insiders.exe'
+                  : 'Antigravity.exe'
         });
       }
       if (pendingImages.length === 0) return [];
@@ -369,11 +379,14 @@ export function createRelaunchMonitor() {
       }
       if (!anyCandidateAlive) return [];
 
+      const wmiNameFilter = Array.from(new Set(pendingImages.map((i) => i.imageName)))
+        .map((n) => `Name='${n}'`)
+        .join(' OR ');
       const psProbe = [
         `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8`,
         `$ErrorActionPreference = 'SilentlyContinue'`,
         `$now = [DateTime]::UtcNow`,
-        `$list = Get-CimInstance Win32_Process -Filter "Name='Antigravity.exe' OR Name='Antigravity - Insiders.exe' OR Name='Antigravity IDE.exe'"`,
+        `$list = Get-CimInstance Win32_Process -Filter "${wmiNameFilter}"`,
         `$hosts = @(); $workers = @()`,
         `foreach ($p in $list) {`,
         `  $id = [int]$p.ProcessId`,
@@ -401,11 +414,13 @@ export function createRelaunchMonitor() {
         const hosts = Array.isArray(parsed.hosts) ? parsed.hosts : parsed.hosts ? [parsed.hosts] : [];
         return hosts.map((h) => {
           const targetName = `${h.name || ''} ${h.exe || ''}`;
-          const ch = /antigravity\s+ide/i.test(targetName)
-            ? 'ide'
-            : /insiders/i.test(targetName)
-              ? 'insiders'
-              : 'stable';
+          const ch = /\bcode\.exe\b/i.test(targetName)
+            ? 'vscode'
+            : /antigravity\s+ide/i.test(targetName)
+              ? 'ide'
+              : /insiders/i.test(targetName)
+                ? 'insiders'
+                : 'stable';
           const cmd = String(h.cmd || '');
           const exeStr = String(h.exe || '');
           const hasFlag = /--remote-debugging-port(?:=|\s|$)/i.test(cmd);

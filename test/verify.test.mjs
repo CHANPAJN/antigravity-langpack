@@ -16,6 +16,7 @@ import {
   loadMergedDictionary,
   readJsonFile,
   resolveActiveChannels,
+  resolveChannelInfo,
   resolveLocaleFiles,
   writeConfigFile
 } from '../src/paths.mjs';
@@ -31,8 +32,13 @@ import {
   configureAutostart,
   ensureIdeLanguagePacksRegistry,
   installMacShellLaunchers,
+  isDaemonCommandLine,
+  isLiveDaemonPid,
+  parseWinTasklistImageName,
   patchVscodeArgvJsonc,
+  readDaemonPid,
   removeMacShellLaunchers,
+  stopBackgroundDaemon,
   syncAgentLanguageRule
 } from '../src/service.mjs';
 import { runRepoSelfCheck, saveLearnedTranslations, validateAndFilterTranslations } from '../cli.mjs';
@@ -663,7 +669,7 @@ test('Opt-in AI thinking/reply language sync defaults to false, switches cleanly
 
 test('2-in-1 Antigravity IDE channel discovery, JSONC argv.json patching & languagepacks.json registry work cleanly', () => {
   const channels = resolveActiveChannels('auto').map((c) => c.channel);
-  assert.deepEqual(channels, ['stable', 'insiders', 'ide']);
+  assert.deepEqual(channels, ['stable', 'insiders', 'ide', 'vscode']);
 
   const macIde = parsePosixHostProcessRow(
     '  7210   00:09 /Applications/Antigravity IDE.app/Contents/MacOS/Electron --remote-debugging-port=0',
@@ -781,8 +787,8 @@ test('Relaunch preserves custom CLI flags (--proxy-server, workspace paths), Aut
   assert.deepEqual(linuxCustom.extraArgs, ['--proxy-bypass-list=localhost,127.0.0.1', '/home/dev/repo']);
 
   const winArgs = extractWinCommandTail(
-    '"C:\\Users\\LI\\AppData\\Local\\Programs\\Antigravity\\Antigravity.exe" --proxy-server=socks5://127.0.0.1:1080 "D:\\Code\\Demo App"',
-    'C:\\Users\\LI\\AppData\\Local\\Programs\\Antigravity\\Antigravity.exe'
+    '"C:\\Users\\dev\\AppData\\Local\\Programs\\Antigravity\\Antigravity.exe" --proxy-server=socks5://127.0.0.1:1080 "D:\\Code\\Demo App"',
+    'C:\\Users\\dev\\AppData\\Local\\Programs\\Antigravity\\Antigravity.exe'
   );
   assert.deepEqual(winArgs, ['--proxy-server=socks5://127.0.0.1:1080', 'D:\\Code\\Demo App']);
 
@@ -973,5 +979,86 @@ test('On-demand Electron native context menu hook translates multi-level items, 
       configurable: true,
       enumerable: false
     });
+  }
+});
+
+test('PID lock verification rejects reused PIDs (e.g. Weixin.exe or unrelated Node processes) without killing them', () => {
+  // 1. Cross-platform command-line matcher
+  assert.equal(
+    isDaemonCommandLine(
+      '"C:\\Program Files\\nodejs\\node.exe" --disable-warning=ExperimentalWarning "C:\\Users\\root1\\.antigravity-langpack\\src\\daemon.mjs"'
+    ),
+    true
+  );
+  assert.equal(
+    isDaemonCommandLine('/opt/homebrew/bin/node --disable-warning=ExperimentalWarning /Users/dev/.antigravity-langpack/src/daemon.mjs'),
+    true
+  );
+  assert.equal(isDaemonCommandLine('/usr/bin/nodejs /home/dev/antigravity-langpack/src/daemon.mjs'), true);
+  assert.equal(isDaemonCommandLine('"C:\\Program Files\\Tencent\\Weixin\\Weixin.exe"'), false);
+  assert.equal(isDaemonCommandLine('"C:\\Program Files\\nodejs\\node.exe" "C:\\app\\node_modules\\vite\\bin\\vite.js"'), false);
+  assert.equal(isDaemonCommandLine('rg daemon.mjs src/daemon.mjs'), false);
+
+  // 2. Windows tasklist CSV parser (locale-independent)
+  assert.equal(parseWinTasklistImageName('"Weixin.exe","33696","Console","1","245,120 K"\r\n', 33696), 'Weixin.exe');
+  assert.equal(parseWinTasklistImageName('"node.exe","15924","Console","1","84,672 K"\r\n', 15924), 'node.exe');
+  assert.equal(parseWinTasklistImageName('信息: 没有运行的任务匹配指定标准。\r\n', 33696), '');
+
+  // 3. Live OS verification: current test runner is a real node process, NOT src/daemon.mjs!
+  //    Before fix: readDaemonPid() blindly called process.kill(pid, 0) and treated it as the daemon,
+  //    and stopBackgroundDaemon() would SIGTERM/kill the innocent collided process.
+  assert.equal(isLiveDaemonPid(process.pid), false, 'Unrelated live node.exe process must not be mistaken for daemon.mjs');
+
+  const tmpLock = path.join(os.tmpdir(), `agy-langpack-pid-collision-test-${process.pid}-${Date.now()}.pid`);
+  try {
+    fs.writeFileSync(tmpLock, String(process.pid), 'utf8');
+    // stopBackgroundDaemon must NOT kill our own test runner process, and must purge the stale lock file
+    const stoppedPid = stopBackgroundDaemon({ lockFile: tmpLock });
+    assert.equal(stoppedPid, 0);
+    assert.equal(fs.existsSync(tmpLock), false, 'Stale collided PID lock file must be cleaned up automatically');
+
+    // Valid daemon probe preserves PID and returns it cleanly
+    fs.writeFileSync(tmpLock, '424242', 'utf8');
+    assert.equal(readDaemonPid({ lockFile: tmpLock, probeFn: (p) => p === 424242 }), 424242);
+    assert.equal(fs.existsSync(tmpLock), true);
+  } finally {
+    if (fs.existsSync(tmpLock)) fs.unlinkSync(tmpLock);
+  }
+});
+
+test('Standard VS Code channel activates strictly when Google.google-antigravity extension is installed', () => {
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'agi18n-vscode-ext-'));
+  try {
+    // Fake VS Code userDataDir present, but extension NOT installed -> must stay installed: false
+    const winCodeDir = path.join(tmpHome, 'AppData', 'Roaming', 'Code');
+    const macCodeDir = path.join(tmpHome, 'Library', 'Application Support', 'Code');
+    const linCodeDir = path.join(tmpHome, '.config', 'Code');
+    fs.mkdirSync(winCodeDir, { recursive: true });
+    fs.mkdirSync(macCodeDir, { recursive: true });
+    fs.mkdirSync(linCodeDir, { recursive: true });
+
+    const beforeExt = resolveChannelInfo('vscode', { customHome: tmpHome });
+    assert.equal(beforeExt.installed, false, 'Plain VS Code without Antigravity extension must remain untouched');
+
+    // Install Google.google-antigravity extension folder -> activates channel cleanly
+    const extFolder = path.join(tmpHome, '.vscode', 'extensions', 'google.google-antigravity-1.12.0');
+    fs.mkdirSync(extFolder, { recursive: true });
+    const afterExt = resolveChannelInfo('vscode', { customHome: tmpHome });
+    assert.equal(afterExt.installed, true, 'VS Code with Google.google-antigravity installed must activate channel');
+
+    // Verify POSIX process row parsing for macOS Visual Studio Code.app & Linux /usr/share/code/code
+    const macCode = parsePosixHostProcessRow(
+      '  9410   00:05 /Applications/Visual Studio Code.app/Contents/MacOS/Electron --remote-debugging-port=0',
+      'darwin'
+    );
+    assert.equal(macCode.channel, 'vscode');
+    assert.equal(macCode.appBundle, '/Applications/Visual Studio Code.app');
+    assert.equal(macCode.hasCdpFlag, true);
+
+    const linCode = parsePosixHostProcessRow('  9512   00:08 /usr/share/code/code .', 'linux');
+    assert.equal(linCode.channel, 'vscode');
+    assert.deepEqual(linCode.extraArgs, ['.']);
+  } finally {
+    fs.rmSync(tmpHome, { recursive: true, force: true });
   }
 });

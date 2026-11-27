@@ -101,11 +101,34 @@ export function statSignature(filePath) {
   }
 }
 
+export function hasAntigravityVscodeExtension(extensionsDir) {
+  if (!extensionsDir || !fs.existsSync(extensionsDir)) return false;
+  try {
+    const entries = fs.readdirSync(extensionsDir);
+    if (entries.some((name) => /^google\.google-?antigravity(?:-[0-9]|\b)/i.test(name))) {
+      return true;
+    }
+    const manifestPath = path.join(extensionsDir, 'extensions.json');
+    if (fs.existsSync(manifestPath)) {
+      const raw = fs.readFileSync(manifestPath, 'utf8');
+      return /"google\.google-?antigravity"/i.test(raw);
+    }
+  } catch {}
+  return false;
+}
+
 export function resolveChannelInfo(channelId, { customHome = '' } = {}) {
   const home = customHome || os.homedir();
   const isInsiders = channelId === 'insiders';
   const isIde = channelId === 'ide';
-  const appDataName = isIde ? 'Antigravity IDE' : isInsiders ? 'Antigravity - Insiders' : 'Antigravity';
+  const isVscode = channelId === 'vscode';
+  const appDataName = isVscode
+    ? 'Code'
+    : isIde
+      ? 'Antigravity IDE'
+      : isInsiders
+        ? 'Antigravity - Insiders'
+        : 'Antigravity';
   const geminiStateName = isInsiders ? 'antigravity-insiders' : 'antigravity';
 
   let userDataDir = '';
@@ -117,48 +140,73 @@ export function resolveChannelInfo(channelId, { customHome = '' } = {}) {
     const appData = customHome ? path.join(home, 'AppData', 'Roaming') : process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
     const localAppData = customHome ? path.join(home, 'AppData', 'Local') : process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local');
     const progFiles = process.env.ProgramFiles || 'C:\\Program Files';
-    const winInstallFolder = isIde ? 'Antigravity IDE' : isInsiders ? 'antigravity-insiders' : 'antigravity';
-    const winExeName = isIde ? 'Antigravity IDE.exe' : isInsiders ? 'Antigravity - Insiders.exe' : 'Antigravity.exe';
     userDataDir = path.join(appData, appDataName);
-    exeCandidates = [
-      path.join(localAppData, 'Programs', winInstallFolder, winExeName),
-      path.join(localAppData, 'Programs', appDataName, winExeName),
-      path.join(progFiles, winInstallFolder, winExeName),
-      path.join(progFiles, appDataName, winExeName)
-    ];
-    if (isIde) {
-      cliCandidates = [
-        path.join(localAppData, 'Programs', 'Antigravity IDE', 'bin', 'antigravity-ide.cmd'),
-        path.join(progFiles, 'Antigravity IDE', 'bin', 'antigravity-ide.cmd')
+    if (isVscode) {
+      exeCandidates = [
+        path.join(localAppData, 'Programs', 'Microsoft VS Code', 'Code.exe'),
+        path.join(progFiles, 'Microsoft VS Code', 'Code.exe')
       ];
+      cliCandidates = [
+        path.join(localAppData, 'Programs', 'Microsoft VS Code', 'bin', 'code.cmd'),
+        path.join(progFiles, 'Microsoft VS Code', 'bin', 'code.cmd')
+      ];
+    } else {
+      const winInstallFolder = isIde ? 'Antigravity IDE' : isInsiders ? 'antigravity-insiders' : 'antigravity';
+      const winExeName = isIde ? 'Antigravity IDE.exe' : isInsiders ? 'Antigravity - Insiders.exe' : 'Antigravity.exe';
+      exeCandidates = [
+        path.join(localAppData, 'Programs', winInstallFolder, winExeName),
+        path.join(localAppData, 'Programs', appDataName, winExeName),
+        path.join(progFiles, winInstallFolder, winExeName),
+        path.join(progFiles, appDataName, winExeName)
+      ];
+      if (isIde) {
+        cliCandidates = [
+          path.join(localAppData, 'Programs', 'Antigravity IDE', 'bin', 'antigravity-ide.cmd'),
+          path.join(progFiles, 'Antigravity IDE', 'bin', 'antigravity-ide.cmd')
+        ];
+      }
     }
   } else if (process.platform === 'darwin') {
-    const bundleName = `${appDataName}.app`;
+    const bundleName = isVscode ? 'Visual Studio Code.app' : `${appDataName}.app`;
     userDataDir = path.join(home, 'Library', 'Application Support', appDataName);
     macAppBundles = [path.join('/Applications', bundleName), path.join(home, 'Applications', bundleName)];
-    exeCandidates = isIde
-      ? macAppBundles.flatMap((b) => [
-          path.join(b, 'Contents', 'MacOS', 'Electron'),
-          path.join(b, 'Contents', 'MacOS', appDataName)
-        ])
-      : macAppBundles.map((b) => path.join(b, 'Contents', 'MacOS', appDataName));
-    if (isIde) {
+    if (isVscode) {
+      exeCandidates = macAppBundles.map((b) => path.join(b, 'Contents', 'MacOS', 'Electron'));
       cliCandidates = [
-        ...macAppBundles.map((b) => path.join(b, 'Contents', 'Resources', 'app', 'bin', 'antigravity-ide')),
-        '/usr/local/bin/antigravity-ide'
+        ...macAppBundles.map((b) => path.join(b, 'Contents', 'Resources', 'app', 'bin', 'code')),
+        '/opt/homebrew/bin/code',
+        '/usr/local/bin/code'
       ];
+    } else {
+      exeCandidates = isIde
+        ? macAppBundles.flatMap((b) => [
+            path.join(b, 'Contents', 'MacOS', 'Electron'),
+            path.join(b, 'Contents', 'MacOS', appDataName)
+          ])
+        : macAppBundles.map((b) => path.join(b, 'Contents', 'MacOS', appDataName));
+      if (isIde) {
+        cliCandidates = [
+          ...macAppBundles.map((b) => path.join(b, 'Contents', 'Resources', 'app', 'bin', 'antigravity-ide')),
+          '/usr/local/bin/antigravity-ide'
+        ];
+      }
     }
   } else {
     const xdgConfig = customHome ? path.join(home, '.config') : process.env.XDG_CONFIG_HOME || path.join(home, '.config');
-    const linuxBin = isIde ? 'antigravity-ide' : isInsiders ? 'antigravity-insiders' : 'antigravity';
     userDataDir = path.join(xdgConfig, appDataName);
-    exeCandidates = [
-      `/usr/bin/${linuxBin}`,
-      `/usr/local/bin/${linuxBin}`,
-      `/opt/${appDataName}/${linuxBin}`,
-      `/usr/share/${linuxBin}/${linuxBin}`
-    ];
-    if (isIde) cliCandidates = exeCandidates;
+    if (isVscode) {
+      exeCandidates = ['/usr/share/code/code', '/usr/bin/code', '/usr/local/bin/code', '/snap/bin/code'];
+      cliCandidates = ['/usr/bin/code', '/usr/local/bin/code', '/snap/bin/code'];
+    } else {
+      const linuxBin = isIde ? 'antigravity-ide' : isInsiders ? 'antigravity-insiders' : 'antigravity';
+      exeCandidates = [
+        `/usr/bin/${linuxBin}`,
+        `/usr/local/bin/${linuxBin}`,
+        `/opt/${appDataName}/${linuxBin}`,
+        `/usr/share/${linuxBin}/${linuxBin}`
+      ];
+      if (isIde) cliCandidates = exeCandidates;
+    }
   }
 
   const exePath = exeCandidates.find((p) => fs.existsSync(p)) || '';
@@ -166,14 +214,15 @@ export function resolveChannelInfo(channelId, { customHome = '' } = {}) {
   const appBundle = macAppBundles.find((b) => fs.existsSync(b)) || '';
   const portFile = path.join(userDataDir, 'DevToolsActivePort');
   const conversationsDir = path.join(home, '.gemini', geminiStateName, 'conversations');
-  const ideDotDir = isIde ? path.join(home, '.antigravity-ide') : '';
-  const argvPath = isIde ? path.join(ideDotDir, 'argv.json') : '';
-  const extensionsDir = isIde ? path.join(ideDotDir, 'extensions') : '';
-  const installed = Boolean(exePath || appBundle || fs.existsSync(userDataDir));
+  const ideDotDir = isVscode ? path.join(home, '.vscode') : isIde ? path.join(home, '.antigravity-ide') : '';
+  const argvPath = ideDotDir ? path.join(ideDotDir, 'argv.json') : '';
+  const extensionsDir = ideDotDir ? path.join(ideDotDir, 'extensions') : '';
+  const hostPresent = Boolean(exePath || appBundle || fs.existsSync(userDataDir));
+  const installed = isVscode ? hostPresent && hasAntigravityVscodeExtension(extensionsDir) : hostPresent;
 
   return {
     channel: channelId,
-    label: appDataName,
+    label: isVscode ? 'Visual Studio Code (Antigravity)' : appDataName,
     userDataDir,
     portFile,
     exePath,
@@ -190,7 +239,13 @@ export function resolveActiveChannels(channelMode = 'auto') {
   if (channelMode === 'stable') return [resolveChannelInfo('stable')];
   if (channelMode === 'insiders') return [resolveChannelInfo('insiders')];
   if (channelMode === 'ide') return [resolveChannelInfo('ide')];
-  return [resolveChannelInfo('stable'), resolveChannelInfo('insiders'), resolveChannelInfo('ide')];
+  if (channelMode === 'vscode') return [resolveChannelInfo('vscode')];
+  return [
+    resolveChannelInfo('stable'),
+    resolveChannelInfo('insiders'),
+    resolveChannelInfo('ide'),
+    resolveChannelInfo('vscode')
+  ];
 }
 
 export function readDevToolsPort(portFile) {

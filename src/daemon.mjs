@@ -132,7 +132,13 @@ function createPersistentSession(target, channelInfo, getScriptState, onLocaleRe
             clearTimeout(t);
             res(payload);
           });
-          ws.send(JSON.stringify({ id, method, params }));
+          try {
+            ws.send(JSON.stringify({ id, method, params }));
+          } catch {
+            clearTimeout(t);
+            callbacks.delete(id);
+            res(null);
+          }
         });
 
       const applyBundle = async () => {
@@ -202,25 +208,32 @@ function createPersistentSession(target, channelInfo, getScriptState, onLocaleRe
 
       ws.addEventListener('open', async () => {
         clearTimeout(openTimer);
-        await callCdp('Page.enable');
-        await callCdp('Runtime.enable');
-        if (!isWorkbench) {
-          const check = await callCdp('Runtime.evaluate', {
-            expression: `Boolean(window.location?.protocol === 'vscode-file:' || /^https?:\\/\\/(?:127\\.0\\.0\\.1|localhost):\\d+\\//i.test(window.location?.href || '') || window.electronNative || document.querySelector('[id="antigravity.agentSidePanelInputBox"], body[data-agy-theme], body[data-newux-theme]'))`,
-            returnByValue: true
-          });
-          isWorkbench = check?.result?.result?.value === true;
+        try {
+          await callCdp('Page.enable');
+          await callCdp('Runtime.enable');
+          if (!isWorkbench) {
+            const check = await callCdp('Runtime.evaluate', {
+              expression: `Boolean(window.location?.protocol === 'vscode-file:' || /^https?:\\/\\/(?:127\\.0\\.0\\.1|localhost):\\d+\\//i.test(window.location?.href || '') || window.electronNative || document.querySelector('[id="antigravity.agentSidePanelInputBox"], body[data-agy-theme], body[data-newux-theme]'))`,
+              returnByValue: true
+            });
+            isWorkbench = check?.result?.result?.value === true;
+          }
+          if (!isWorkbench) {
+            ws.close();
+            return complete(null);
+          }
+          if (target.type === 'page') {
+            callCdp('Target.setDiscoverTargets', { discover: true }).catch(() => {});
+          }
+          await callCdp('Runtime.addBinding', { name: BINDING_NAME });
+          await applyBundle();
+          complete(sessionObj);
+        } catch {
+          try {
+            ws.close();
+          } catch {}
+          complete(null);
         }
-        if (!isWorkbench) {
-          ws.close();
-          return complete(null);
-        }
-        if (target.type === 'page') {
-          callCdp('Target.setDiscoverTargets', { discover: true }).catch(() => {});
-        }
-        await callCdp('Runtime.addBinding', { name: BINDING_NAME });
-        await applyBundle();
-        complete(sessionObj);
       });
 
       ws.addEventListener('close', () => {
@@ -242,6 +255,8 @@ function createPersistentSession(target, channelInfo, getScriptState, onLocaleRe
 
 export async function runDaemonLoop({ once = false } = {}) {
   if (!once) {
+    process.on('uncaughtException', () => {});
+    process.on('unhandledRejection', () => {});
     const existingPid = readDaemonPid();
     if (existingPid > 0 && existingPid !== process.pid) {
       try {
@@ -251,7 +266,10 @@ export async function runDaemonLoop({ once = false } = {}) {
     fs.writeFileSync(PID_LOCK_FILE, String(process.pid), 'utf8');
     const cleanup = () => {
       try {
-        if (fs.existsSync(PID_LOCK_FILE) && fs.readFileSync(PID_LOCK_FILE, 'utf8').trim() === String(process.pid)) {
+        const firstLine = fs.existsSync(PID_LOCK_FILE)
+          ? fs.readFileSync(PID_LOCK_FILE, 'utf8').split(/\r?\n/)[0]?.trim() || ''
+          : '';
+        if (firstLine === String(process.pid)) {
           fs.unlinkSync(PID_LOCK_FILE);
         }
       } catch {}

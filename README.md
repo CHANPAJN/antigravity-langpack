@@ -2,7 +2,7 @@
 
 # antigravity-langpack
 
-Plain-text native UI localization pack for **Google Antigravity (Stable & Insiders)** and **Antigravity IDE** on macOS, Windows, and Linux.  
+Plain-text native UI localization pack for **Google Antigravity (Stable & Insiders)**, **Antigravity IDE**, and the **Google Antigravity VS Code Extension** on macOS, Windows, and Linux.  
 One lightweight daemon syncs matching VS Code host language packs (where available) and live-translates the embedded **Agent side panel, Antigravity Settings, Swarm board, system toasts, context menus & inline actions** that standard language packs miss — zero app.asar modification, intact macOS Apple notarization, and 15 offline locale packs (2,865 entries each).
 
 <sub>Google Antigravity 2.x 日本語化 · 한글화 / 한국어 패치 · Русификатор · 中文汉化 · 繁體中文化 · Giao diện Tiếng Việt · Español · Français · Deutsch · Português · Italiano</sub>
@@ -88,7 +88,7 @@ node cli.mjs uninstall       # Remove autostart and restore original English UI 
 
 ## How It Works & Operational Transparency
 
-- **Unified Antigravity + Antigravity IDE Coverage**: A single background daemon attaches to `Stable`, `Insiders`, and `Antigravity IDE` simultaneously — syncing matching official VS Code host language packs (`argv.json` + `languagepacks.json`, where available) while live-translating the embedded Agent side panel, standalone `Antigravity Settings` frame, `Swarm` board, and inline diff/completion buttons.
+- **Unified Desktop, Antigravity IDE & VS Code Extension Coverage**: A single background daemon attaches to `Stable`, `Insiders`, `Antigravity IDE`, and standard `Visual Studio Code` (activated automatically only when `Google.google-antigravity` is installed in `~/.vscode/extensions`) — syncing matching official host language packs while live-translating the embedded Agent side panel, standalone `Antigravity Settings` frame, `Swarm` board, and inline diff/completion buttons.
 - **Event-Driven Local CDP Stream**: Connects over `127.0.0.1` via a single persistent WebSocket (`Page.frameNavigated`, `Target.targetCreated` & `Runtime.bindingCalled`, `~0.0%` idle CPU) plus `fs.watch` on `dict/`. Never touches `/Applications/Antigravity.app`, `Program Files`, or `app.asar`.
 - **DOM Isolation, Zero-Idle Context Menus & `WeakMap` Restoration**: Skips Monaco code editors, file explorer trees, open editor tabs, Git branch status, user-named workspaces/groups, integrated terminals, code blocks, and plugin `README` prose while localizing system notification toasts and on-demand context menus (`0%` idle overhead at rest). Original `TextNode` values are tracked in a `WeakMap` for instant in-memory switching and restoration.
 - **Cold-Start Debug Port Relay (`autoRelaunchCdp: true`)**: On Windows, `install` appends `--remote-debugging-port=0` to user and taskbar shortcuts. If launched bare (e.g. via `antigravity-ide://` protocol links or custom proxy wrappers), the daemon only intercepts newly started processes (`<15s` old, `<25s` after `--updated`) with no recent conversation writes, preserves inherited proxy variables and custom flags, sends a graceful close (`CloseMainWindow` / `SIGTERM` — never force-kill), and relaunches once with `--remote-debugging-port=0`. Set `"autoRelaunchCdp": false` in `dict/config.json` to disable.
