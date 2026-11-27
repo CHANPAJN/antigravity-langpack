@@ -15,8 +15,8 @@
 </p>
 
 <p>
-  <img src="https://img.shields.io/badge/Antigravity-2.35%2B%20%C2%B7%20IDE%20%C2%B7%20VS%20Code-10B981?style=flat-square" alt="相容 Antigravity 2.35+、IDE 與 VS Code" />
-  <img src="https://img.shields.io/badge/VS%20Code-Google.google--antigravity-007ACC?style=flat-square" alt="支援 VS Code 官方擴充套件版" />
+  <img src="./assets/badge-antigravity.svg" alt="相容 Antigravity 2.35+、IDE 與 VS Code" />
+  <img src="./assets/badge-vscode.svg" alt="支援 VS Code 官方擴充套件版" />
   <a href="../LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="GPL-3.0 License" /></a>
 </p>
 

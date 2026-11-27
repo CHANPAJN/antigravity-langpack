@@ -17,8 +17,8 @@ One lightweight daemon syncs matching VS Code host language packs (where availab
 </p>
 
 <p>
-  <img src="https://img.shields.io/badge/Antigravity-2.35%2B%20%C2%B7%20IDE%20%C2%B7%20VS%20Code-10B981?style=flat-square" alt="Compatible with Antigravity 2.35+, IDE & VS Code" />
-  <img src="https://img.shields.io/badge/VS%20Code-Google.google--antigravity-007ACC?style=flat-square" alt="Official VS Code Extension Supported" />
+  <img src="./docs/assets/badge-antigravity.svg" alt="Compatible with Antigravity 2.35+, IDE & VS Code" />
+  <img src="./docs/assets/badge-vscode.svg" alt="Official VS Code Extension Supported" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="GPL-3.0 License" /></a>
   <a href="https://linux.do"><img src="https://img.shields.io/badge/Community-LINUX%20DO-1C1C1E?style=flat-square&logo=linux&logoColor=34D399" alt="LINUX DO Community" /></a>
 </p>
