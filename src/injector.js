@@ -291,11 +291,12 @@
     return null;
   }
 
-  function translateDynamicPattern(trimmed, pat, dict, lowerMultiWordDict) {
+  function translateDynamicPattern(trimmed, pat, dict, lowerMultiWordDict, locale = '') {
     if (!pat) return null;
     let m;
     const units = pat.units || {};
     const periods = pat.periods || {};
+    const dotChar = locale.startsWith('zh') || locale === 'ja' ? '。' : '.';
     const lookupTerm = (rawTerm) => {
       const k = String(rawTerm || '').trim();
       if (!k) return k;
@@ -330,14 +331,14 @@
     }
     if (pat.usedHourLimitRefresh && (m = trimmed.match(/^You have used some of your (\d+)-hour limit,\s*it will fully refresh in\s+(.+?)(\.)?$/i))) {
       const sentence = fillTpl(pat.usedHourLimitRefresh, { 0: m[1], 1: formatDurationLocalized(m[2], pat) });
-      return sentence ? sentence + (m[3] ? '。' : '') : null;
+      return sentence ? (m[3] && !sentence.endsWith(dotChar) ? sentence + dotChar : sentence) : null;
     }
     if (pat.usedNamedLimitRefresh && (m = trimmed.match(/^You have used some of your (weekly|daily|monthly) limit,\s*it will fully refresh in\s+(.+?)(\.)?$/i))) {
       const sentence = fillTpl(pat.usedNamedLimitRefresh, {
         period: periods[m[1].toLowerCase()] || m[1],
         0: formatDurationLocalized(m[2], pat)
       });
-      return sentence ? sentence + (m[3] ? '。' : '') : null;
+      return sentence ? (m[3] && !sentence.endsWith(dotChar) ? sentence + dotChar : sentence) : null;
     }
     if ((m = trimmed.match(/^(.+?)\s+(Weekly|Daily|Monthly)\s+limit$/i))) {
       return fillTpl(pat.modelNamedLimit, {
@@ -1127,7 +1128,7 @@
       }
 
       if (!RE_ALPHA.test(trimmed)) return null;
-      const dyn = translateDynamicPattern(trimmed, patterns, dict, lowerMultiWordDict);
+      const dyn = translateDynamicPattern(trimmed, patterns, dict, lowerMultiWordDict, locale);
       if (typeof dyn === 'string') {
         untrackedSet.delete(trimmed);
         return raw.replace(trimmed, () => dyn);

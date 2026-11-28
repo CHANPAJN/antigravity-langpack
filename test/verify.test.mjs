@@ -1062,3 +1062,86 @@ test('Standard VS Code channel activates strictly when Google.google-antigravity
     fs.rmSync(tmpHome, { recursive: true, force: true });
   }
 });
+
+test('Russian dictionary has full translation coverage and non-CJK limit refresh punctuation', async () => {
+  const { merged } = loadMergedDictionary('ru');
+  const entries = Object.entries(merged);
+  assert.ok(entries.length >= 2893);
+  for (const [k, v] of entries) {
+    assert.notEqual(v, k, `Untranslated Russian entry: "${k}"`);
+    assert.equal(/[\u0400-\u04ff]/.test(v), true, `Missing Cyrillic in Russian entry "${k}": "${v}"`);
+    assert.equal(/[\u3000-\u303f\u3400-\u9fff]/.test(v), false, `Unexpected CJK character in Russian entry "${k}": "${v}"`);
+  }
+
+  const vm = await import('node:vm');
+  const { getLocaleSpec } = await import('../src/locales.mjs');
+  const injectorSrc = fs.readFileSync(path.join(PROJECT_ROOT, 'src', 'injector.js'), 'utf8');
+
+  function runLimitPattern(localeCode, text) {
+    const parentEl = { nodeType: 1, tagName: 'DIV', isConnected: true, closest: () => null, getAttribute: () => null, setAttribute: () => {}, removeAttribute: () => {} };
+    const textNode = { nodeType: 3, nodeValue: text, parentElement: parentEl };
+    const fakeBody = { nodeType: 1, tagName: 'BODY', isConnected: true, closest: () => null, getAttribute: () => null, setAttribute: () => {}, removeAttribute: () => {}, querySelectorAll: () => [] };
+    const sandbox = {
+      window: null,
+      document: {
+        hidden: false,
+        title: 'Antigravity',
+        body: fakeBody,
+        head: fakeBody,
+        getElementById: () => null,
+        querySelectorAll: () => [],
+        createTreeWalker: () => {
+          let done = false;
+          return {
+            currentNode: null,
+            nextNode() {
+              if (done) return null;
+              done = true;
+              this.currentNode = textNode;
+              return textNode;
+            }
+          };
+        },
+        addEventListener() {},
+        removeEventListener() {}
+      },
+      NodeFilter: { SHOW_TEXT: 4, SHOW_ELEMENT: 1, FILTER_ACCEPT: 1, FILTER_REJECT: 2, FILTER_SKIP: 3 },
+      MutationObserver: class { observe() {} disconnect() {} },
+      WeakMap,
+      Set,
+      Map,
+      requestAnimationFrame: (fn) => (fn(), 0),
+      cancelAnimationFrame: () => {},
+      setTimeout: () => 1,
+      clearTimeout: () => {}
+    };
+    sandbox.window = sandbox;
+    sandbox.window.top = sandbox.window;
+    sandbox.window.location = { protocol: 'https:', href: 'https://127.0.0.1:59678/' };
+    vm.runInNewContext(injectorSrc, sandbox);
+    const spec = getLocaleSpec(localeCode);
+    sandbox.window.__AGI18N_BOOT__({
+      buildId: `agi18n-${localeCode}-punct-test`,
+      locale: localeCode,
+      enabled: true,
+      localeOptions: LOCALE_MENU_OPTIONS,
+      contextOverrides: spec.contextOverrides,
+      patterns: spec.patterns,
+      dict: loadMergedDictionary(localeCode).merged
+    });
+    return textNode.nodeValue;
+  }
+
+  assert.equal(
+    runLimitPattern('ru', 'You have used some of your 5-hour limit, it will fully refresh in 2h.'),
+    'Часть 5-часового лимита использована, полное восстановление через 2 ч.'
+  );
+  assert.equal(
+    runLimitPattern('ru', 'You have used some of your weekly limit, it will fully refresh in 3d.'),
+    'Часть лимита (Недельный) использована, полное восстановление через 3 дн.'
+  );
+  assert.equal(
+    runLimitPattern('zh-CN', 'You have used some of your 5-hour limit, it will fully refresh in 2h.'),
+    '你已使用部分 5 小时限额，将在 2 小时后完全恢复。'
+  );
+});
