@@ -3,7 +3,7 @@
 # antigravity-langpack
 
 **Google Antigravity（Stable & Insiders）**、**Antigravity IDE** 與 **VS Code 官方擴充套件版（`Google.google-antigravity`）** 純文字原生多語系介面包。  
-同一個輕量背景服務按所選語系自動同步對應之 IDE 外殼語言包，並將官方語言包未涵蓋的**右側 Agent 面板、Antigravity Settings 專屬設定頁、Swarm 協作看板與行內 Diff/補全按鈕**即時在地化——免改 app.asar、保留 macOS 官方公證簽章，內建 15 套離線詞庫（每套 2,865 條）。
+同一個輕量背景服務按所選語系自動同步對應之 IDE 外殼語言包，並將官方語言包未涵蓋的**右側 Agent 面板、Antigravity Settings 專屬設定頁、斜線指令說明、Swarm 協作看板與行內 Diff/補全按鈕**即時在地化——免改 app.asar、保留 macOS 官方公證簽章，內建 15 套離線詞庫（每套 2,893 條）。
 
 <p>
   <a href="../README.md">English</a> ·

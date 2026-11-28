@@ -3,7 +3,7 @@
 # antigravity-langpack
 
 Plain-text native UI localization pack for **Google Antigravity (Stable & Insiders)**, **Antigravity IDE**, and the **Google Antigravity VS Code Extension** on macOS, Windows, and Linux.  
-One lightweight daemon syncs matching VS Code host language packs (where available) and live-translates the embedded **Agent side panel, Antigravity Settings, Swarm board, system toasts, context menus & inline actions** that standard language packs miss — zero app.asar modification, intact macOS Apple notarization, and 15 offline locale packs (2,865 entries each).
+One lightweight daemon syncs matching VS Code host language packs (where available) and live-translates the embedded **Agent side panel, Antigravity Settings, slash-command descriptions, Swarm board, system toasts, context menus & inline actions** that standard language packs miss — zero app.asar modification, intact macOS Apple notarization, and 15 offline locale packs (2,893 entries each).
 
 <sub>Google Antigravity 2.x 日本語化 · 한글화 / 한국어 패치 · Русификатор · 中文汉化 · 繁體中文化 · Giao diện Tiếng Việt · Español · Français · Deutsch · Português · Italiano</sub>
 
@@ -79,7 +79,7 @@ Open **`Settings → Appearance`** inside Antigravity to access two native contr
 
 ```bash
 node cli.mjs status          # Inspect daemon PID, active locale, and connected ports
-node cli.mjs lang            # List all 15 bundled locale packs (2,865 entries each)
+node cli.mjs lang            # List all 15 bundled locale packs (2,893 entries each)
 node cli.mjs lang ru         # Switch UI locale immediately (`en` restores English)
 node cli.mjs ai-lang on      # Opt-in: sync AI thinking & reply language (`off` to disable)
 node cli.mjs sync-ai         # On-demand sandboxed translation for newly added upstream strings
@@ -95,7 +95,7 @@ node cli.mjs uninstall       # Remove autostart and restore original English UI 
 - **Cold-Start Debug Port Relay (`autoRelaunchCdp: true`)**: On Windows, `install` appends `--remote-debugging-port=0` to user and taskbar shortcuts. If launched bare (e.g. via `antigravity-ide://` protocol links or custom proxy wrappers), the daemon only intercepts newly started processes (`<15s` old, `<25s` after `--updated`) with no recent conversation writes, preserves inherited proxy variables and custom flags, sends a graceful close (`CloseMainWindow` / `SIGTERM` — never force-kill), and relaunches once with `--remote-debugging-port=0`. Set `"autoRelaunchCdp": false` in `dict/config.json` to disable.
 - **Strict Opt-In Defaults**: `collectUntranslated`, `autoSyncAi`, and `syncAiOutputLang` are all `false` by default, and `install` does not write to `~/.gemini/config/` unless explicitly requested (`--with-skill` or `--sync-ai-lang`).
 
-## Bundled Locales (15 Packs × 2,865 Entries · Full Marketplace, Swarm & Settings Coverage)
+## Bundled Locales (15 Packs × 2,893 Entries · Full Marketplace, Slash Commands, Swarm & Settings Coverage)
 
 - **East & South/Southeast Asia**: `zh-CN` (简体中文) · `zh-SG` (简体中文 · English Tech Terms) · `zh-TW` (繁體中文) · `ja` (日本語) · `ko` (한국어) · `vi` (Tiếng Việt) · `th` (ภาษาไทย) · `id` (Bahasa Indonesia) · `hi` (हिन्दी)
 - **Europe & Americas**: `ru` (Русский) · `es` (Español) · `fr` (Français) · `de` (Deutsch) · `pt` (Português) · `it` (Italiano)
